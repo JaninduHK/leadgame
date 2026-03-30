@@ -23,7 +23,7 @@ export default function LeaderboardPage() {
     }
   }, [search]);
 
-  const { isConnected } = useSocket('leaderboard:update', handleLeaderboardUpdate);
+  useSocket('leaderboard:update', handleLeaderboardUpdate);
 
   useEffect(() => {
     api.get('/leaderboard')
@@ -74,12 +74,10 @@ export default function LeaderboardPage() {
             <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15 }}>
               {stats.total} total players
             </span>
-            {isConnected && (
-              <span className="live-badge">
-                <span className="live-dot" />
-                Live Updates
-              </span>
-            )}
+            <span className="live-badge">
+              <span className="live-dot" />
+              Auto-refresh
+            </span>
           </div>
         </div>
 

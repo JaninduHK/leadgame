@@ -3,15 +3,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const { createServer } = require('http');
-const { initSocket } = require('./socket');
 
 const app = express();
-const httpServer = createServer(app);
-
-// Initialize Socket.io
-const io = initSocket(httpServer);
-app.set('io', io);
 
 // Middleware
 app.use(cors({
@@ -28,33 +21,6 @@ const limiter = rateLimit({
   message: { error: 'Too many requests, please try again later.' },
 });
 app.use('/api/', limiter);
-
-// Routes
-const authRoutes = require('./routes/auth');
-const quizRoutes = require('./routes/quiz');
-const leaderboardRoutes = require('./routes/leaderboard');
-const adminRoutes = require('./routes/admin');
-
-app.use('/api/auth', authRoutes);
-app.use('/api/quiz', quizRoutes);
-app.use('/api/leaderboard', leaderboardRoutes);
-app.use('/api/admin', adminRoutes);
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
-
-// Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal server error' });
-});
 
 // Default questions for seeding
 const defaultQuestions = [
@@ -172,54 +138,90 @@ const defaultQuestions = [
   },
 ];
 
-// MongoDB connection & server start
-mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/aiesec-quiz')
-  .then(async () => {
-    console.log('✅ Connected to MongoDB');
+// Lazy DB connection — reuses connection across serverless invocations
+let dbConnected = false;
 
-    // Seed admin
-    const bcrypt = require('bcryptjs');
-    const Admin = require('./models/Admin');
-    const existingAdmin = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
-    if (!existingAdmin) {
-      await Admin.create({
-        email: process.env.ADMIN_EMAIL || 'admin@aiesec.org.my',
-        password: await bcrypt.hash(process.env.ADMIN_PASSWORD || 'Admin@123456', 12),
-        name: 'AIESEC Admin',
-      });
-      console.log('✅ Admin user created');
-    }
+async function connectDB() {
+  if (dbConnected && mongoose.connection.readyState === 1) return;
 
-    // Seed questions
-    const Question = require('./models/Question');
-    const questionCount = await Question.countDocuments();
-    if (questionCount === 0) {
-      await Question.insertMany(defaultQuestions);
-      console.log('✅ Default questions seeded');
-    }
+  await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/aiesec-quiz');
+  dbConnected = true;
+  console.log('✅ Connected to MongoDB');
 
-    // Seed video
-    const Video = require('./models/Video');
-    const videoCount = await Video.countDocuments();
-    if (videoCount === 0) {
-      await Video.create({
-        title: 'AIESEC in Malaysia - Discover Your Potential',
-        url: 'https://youtu.be/y_GpIJFM51k?si=OLk4QgFgNWjlrwuP',
-        maxViews: 2,
-        isActive: true,
-      });
-      console.log('✅ Default video seeded');
-    }
-
-    const PORT = process.env.PORT || 5000;
-    httpServer.listen(PORT, () => {
-      console.log(`🚀 AIESEC Quiz Server running on port ${PORT}`);
+  // Seed admin
+  const bcrypt = require('bcryptjs');
+  const Admin = require('./models/Admin');
+  const existingAdmin = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
+  if (!existingAdmin) {
+    await Admin.create({
+      email: process.env.ADMIN_EMAIL || 'admin@aiesec.org.my',
+      password: await bcrypt.hash(process.env.ADMIN_PASSWORD || 'Admin@123456', 12),
+      name: 'AIESEC Admin',
     });
-  })
-  .catch((err) => {
-    console.error('❌ MongoDB connection error:', err);
-    process.exit(1);
-  });
+    console.log('✅ Admin user created');
+  }
 
-module.exports = { app, httpServer };
+  // Seed questions
+  const Question = require('./models/Question');
+  const questionCount = await Question.countDocuments();
+  if (questionCount === 0) {
+    await Question.insertMany(defaultQuestions);
+    console.log('✅ Default questions seeded');
+  }
+
+  // Seed video
+  const Video = require('./models/Video');
+  const videoCount = await Video.countDocuments();
+  if (videoCount === 0) {
+    await Video.create({
+      title: 'AIESEC in Malaysia - Discover Your Potential',
+      url: 'https://youtu.be/y_GpIJFM51k?si=OLk4QgFgNWjlrwuP',
+      maxViews: 2,
+      isActive: true,
+    });
+    console.log('✅ Default video seeded');
+  }
+}
+
+// Connect DB before every request (no-op if already connected)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('❌ DB connection error:', err);
+    res.status(500).json({ error: 'Database connection failed' });
+  }
+});
+
+// Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/quiz', require('./routes/quiz'));
+app.use('/api/leaderboard', require('./routes/leaderboard'));
+app.use('/api/admin', require('./routes/admin'));
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+// Only listen locally — Vercel handles this in production
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5001;
+  app.listen(PORT, () => {
+    console.log(`🚀 AIESEC Quiz Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

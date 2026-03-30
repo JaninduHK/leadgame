@@ -1,41 +1,25 @@
-import { useEffect, useRef, useState } from 'react';
-import { io } from 'socket.io-client';
+import { useEffect, useRef } from 'react';
+import api from '../utils/api';
 
+// Polls the leaderboard endpoint at a set interval.
+// Mirrors the old useSocket(event, callback) signature so callers need minimal changes.
 export function useSocket(event, callback) {
-  const socketRef = useRef(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
 
   useEffect(() => {
-    socketRef.current = io('/', {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
+    if (event !== 'leaderboard:update' || !callbackRef.current) return;
 
-    socketRef.current.on('connect', () => setIsConnected(true));
-    socketRef.current.on('disconnect', () => setIsConnected(false));
+    const id = setInterval(async () => {
+      try {
+        const { data } = await api.get('/leaderboard');
+        if (data.leaderboard) callbackRef.current(data.leaderboard);
+      } catch {}
+    }, 15000); // poll every 15 seconds
 
-    if (event && callback) {
-      socketRef.current.on(event, callback);
-    }
+    return () => clearInterval(id);
+  }, [event]);
 
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-    };
-  }, []);
-
-  // Update callback reference without reconnecting
-  useEffect(() => {
-    if (!socketRef.current || !event || !callback) return;
-    socketRef.current.off(event);
-    socketRef.current.on(event, callback);
-    return () => {
-      if (socketRef.current) socketRef.current.off(event);
-    };
-  }, [event, callback]);
-
-  return { socket: socketRef.current, isConnected };
+  // isConnected is always true — polling is always active
+  return { socket: null, isConnected: true };
 }
