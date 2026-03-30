@@ -7,7 +7,6 @@ const Attempt = require('../models/Attempt');
 const Question = require('../models/Question');
 const Video = require('../models/Video');
 const { sendResultEmail } = require('../utils/sendEmail');
-const { getIO } = require('../socket');
 
 const router = express.Router();
 
@@ -201,18 +200,6 @@ router.post(
         correctAnswers: correctCount,
         totalQuestions: questions.length,
       }).catch(console.error);
-
-      // Emit leaderboard update via Socket.io
-      try {
-        const io = getIO();
-        const leaderboard = await Attempt.find({ isCompleted: true })
-          .sort({ score: -1, timeTaken: 1 })
-          .limit(50)
-          .select('name score timeTaken correctAnswers totalQuestions rank createdAt');
-        io.emit('leaderboard:update', leaderboard);
-      } catch (socketErr) {
-        console.error('Socket emit error:', socketErr.message);
-      }
 
       res.json({
         score: serverScore,
