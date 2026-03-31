@@ -136,8 +136,8 @@ export default function Home() {
               marginTop: 48, flexWrap: 'wrap',
             }}>
               {[
-                { icon: '👥', value: stats.totalPlayers.toLocaleString(), label: 'Players' },
-                { icon: '⭐', value: stats.avgScore.toLocaleString(), label: 'Avg Score' },
+                { icon: '👥', value: (stats?.totalPlayers ?? 0).toLocaleString(), label: 'Players' },
+                { icon: '⭐', value: (stats?.avgScore ?? 0).toLocaleString(), label: 'Avg Score' },
                 { icon: '🏫', value: '50+', label: 'Universities' },
               ].map(({ icon, value, label }) => (
                 <motion.div
