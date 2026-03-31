@@ -26,7 +26,10 @@ export default function Home() {
           api.get('/leaderboard/stats'),
         ]);
         setLeaderboard(lb.data.leaderboard?.slice(0, 5) || []);
-        setStats(statsRes.data);
+        setStats({
+          totalPlayers: statsRes.data?.totalPlayers ?? 0,
+          avgScore: statsRes.data?.avgScore ?? 0,
+        });
       } catch {}
       finally { setLoading(false); }
     };
