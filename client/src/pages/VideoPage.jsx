@@ -10,7 +10,7 @@ const MAX_VIEWS = 2;
 
 export default function VideoPage() {
   const navigate = useNavigate();
-  const { videoViews, incrementVideoView, setVideoCompleted, videoCompleted, userName } = useQuiz();
+  const { videoViews, incrementVideoView, setVideoCompleted, videoCompleted, userName, campaignId } = useQuiz();
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [watched, setWatched] = useState(false);
@@ -21,11 +21,12 @@ export default function VideoPage() {
   const viewsLeft = MAX_VIEWS - videoViews;
 
   useEffect(() => {
-    api.get('/quiz/video')
+    if (!campaignId) { navigate('/play'); return; }
+    api.get(`/quiz/video?campaignId=${campaignId}`)
       .then(({ data }) => setVideo(data))
-      .catch(() => toast.error('Could not load video.'))
+      .catch(() => { toast.error('Could not load video.'); navigate('/play'); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [campaignId]);
 
   const handleEnded = () => {
     setWatched(true);

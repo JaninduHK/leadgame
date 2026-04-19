@@ -58,46 +58,37 @@ router.post('/register', [
   }
 });
 
-// GET /api/quiz/video  — accepts ?campaignId=
+// GET /api/quiz/video  — requires ?campaignId=
 router.get('/video', async (req, res) => {
   try {
     const { campaignId } = req.query;
-    if (campaignId) {
-      const campaign = await Campaign.findById(campaignId).select('videoUrl videoTitle');
-      if (campaign?.videoUrl) {
-        return res.json({ _id: campaign._id, title: campaign.videoTitle || 'Introduction Video', url: campaign.videoUrl, maxViews: 2, isActive: true });
-      }
-    }
-    const video = await Video.findOne({ isActive: true }).sort({ updatedAt: -1 });
-    if (!video) return res.status(404).json({ error: 'No active video found.' });
-    res.json(video);
+    if (!campaignId) return res.status(400).json({ error: 'Campaign ID is required.' });
+    const campaign = await Campaign.findById(campaignId).select('videoUrl videoTitle isActive');
+    if (!campaign || !campaign.isActive) return res.status(404).json({ error: 'Campaign not found or inactive.' });
+    if (!campaign.videoUrl) return res.status(404).json({ error: 'No video configured for this campaign.' });
+    res.json({ _id: campaign._id, title: campaign.videoTitle || 'Introduction Video', url: campaign.videoUrl, maxViews: 2, isActive: true });
   } catch (err) {
     res.status(500).json({ error: 'Server error.' });
   }
 });
 
-// GET /api/quiz/questions  — accepts ?campaignId=
+// GET /api/quiz/questions  — requires ?campaignId=
 router.get('/questions', async (req, res) => {
   try {
     const { campaignId } = req.query;
-    if (campaignId) {
-      const campaign = await Campaign.findById(campaignId).select('questions');
-      if (campaign?.questions?.length > 0) {
-        const qs = campaign.questions
-          .sort((a, b) => a.order - b.order)
-          .map(q => {
-            const obj = q.toObject();
-            delete obj.correctAnswer; // don't leak answers
-            obj.options = [...obj.options].sort(() => Math.random() - 0.5);
-            return obj;
-          });
-        return res.json(qs);
-      }
-    }
-    // Fallback to global questions
-    const questions = await Question.find({ isActive: true }).sort({ order: 1 }).select('-correctAnswer');
-    if (!questions.length) return res.status(404).json({ error: 'No questions found.' });
-    res.json(questions.map(q => ({ ...q.toObject(), options: [...q.toObject().options].sort(() => Math.random() - 0.5) })));
+    if (!campaignId) return res.status(400).json({ error: 'Campaign ID is required.' });
+    const campaign = await Campaign.findById(campaignId).select('questions isActive');
+    if (!campaign || !campaign.isActive) return res.status(404).json({ error: 'Campaign not found or inactive.' });
+    if (!campaign.questions?.length) return res.status(404).json({ error: 'No questions configured for this campaign.' });
+    const qs = campaign.questions
+      .sort((a, b) => a.order - b.order)
+      .map(q => {
+        const obj = q.toObject();
+        delete obj.correctAnswer;
+        obj.options = [...obj.options].sort(() => Math.random() - 0.5);
+        return obj;
+      });
+    res.json(qs);
   } catch (err) {
     res.status(500).json({ error: 'Server error.' });
   }
@@ -119,19 +110,11 @@ router.post('/submit', [
     if (!attempt) return res.status(404).json({ error: 'Session not found.' });
     if (attempt.isCompleted) return res.status(400).json({ error: 'Quiz already submitted.' });
 
-    // Load questions — campaign-specific or global
-    let questions = [];
-    if (attempt.campaign) {
-      const campaign = await Campaign.findById(attempt.campaign).select('questions emailTemplate whatsappTemplate telegramTemplate title');
-      if (campaign?.questions?.length > 0) {
-        questions = campaign.questions;
-      }
-    }
-    if (!questions.length) {
-      const questionIds = answers.map(a => a.questionId);
-      questions = await Question.find({ _id: { $in: questionIds }, isActive: true });
-    }
-    if (!questions.length) return res.status(400).json({ error: 'No valid questions found.' });
+    // Load questions — campaign-specific only
+    if (!attempt.campaign) return res.status(400).json({ error: 'No campaign associated with this session.' });
+    const campaign = await Campaign.findById(attempt.campaign).select('questions emailTemplate whatsappTemplate telegramTemplate title');
+    if (!campaign?.questions?.length) return res.status(400).json({ error: 'No questions found for this campaign.' });
+    const questions = campaign.questions;
 
     // Server-side validation
     const validatedAnswers = answers.map(answer => {
@@ -170,15 +153,11 @@ router.post('/submit', [
     await attempt.save();
     const totalPlayers = await Attempt.countDocuments(rankFilter);
 
-    // Get campaign templates if applicable
-    let emailTemplate, whatsappTemplate, telegramTemplate, campaignTitle;
-    if (attempt.campaign) {
-      const campaign = await Campaign.findById(attempt.campaign).select('emailTemplate whatsappTemplate telegramTemplate title');
-      emailTemplate = campaign?.emailTemplate;
-      whatsappTemplate = campaign?.whatsappTemplate;
-      telegramTemplate = campaign?.telegramTemplate;
-      campaignTitle = campaign?.title;
-    }
+    // Campaign templates (campaign already loaded above)
+    const emailTemplate = campaign.emailTemplate;
+    const whatsappTemplate = campaign.whatsappTemplate;
+    const telegramTemplate = campaign.telegramTemplate;
+    const campaignTitle = campaign.title;
 
     sendResultEmail({ name: attempt.name, email: attempt.email, score: serverScore, rank, totalPlayers, correctAnswers: correctCount, totalQuestions: questions.length, emailTemplate, campaignTitle }).catch(console.error);
 

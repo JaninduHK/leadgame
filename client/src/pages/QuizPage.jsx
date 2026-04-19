@@ -12,7 +12,7 @@ const OPTION_BG = { A: T.pink, B: T.bg, C: T.green, D: T.bg };
 
 export default function QuizPage() {
   const navigate = useNavigate();
-  const { sessionId, setAnswers } = useQuiz();
+  const { sessionId, setAnswers, campaignId } = useQuiz();
 
   const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);
@@ -36,14 +36,15 @@ export default function QuizPage() {
   );
 
   useEffect(() => {
-    api.get('/quiz/questions')
+    if (!campaignId) { navigate('/play'); return; }
+    api.get(`/quiz/questions?campaignId=${campaignId}`)
       .then(({ data }) => {
         setQuestions(data);
         questionStartTimeRef.current = Date.now();
       })
-      .catch(() => toast.error('Failed to load questions'))
+      .catch(() => { toast.error('Failed to load questions'); navigate('/play'); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [campaignId]);
 
   useEffect(() => {
     if (questions.length > 0 && !loading) {
