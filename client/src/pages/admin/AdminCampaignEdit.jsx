@@ -168,7 +168,11 @@ export default function AdminCampaignEdit() {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) { toast.error('Title is required'); return; }
+    if (!form.title.trim()) { toast.error('Title is required'); setTab('basic'); return; }
+    if (!form.videoUrl.trim()) { toast.error('Video URL is required'); setTab('basic'); return; }
+    if (form.questions.length === 0) { toast.error('Add at least one question'); setTab('questions'); return; }
+    const incomplete = form.questions.findIndex(q => !q.text.trim() || q.options.some(o => !o.label.trim()));
+    if (incomplete !== -1) { toast.error(`Question ${incomplete + 1} is incomplete — fill in all option texts`); setTab('questions'); return; }
     setSaving(true);
     try {
       const payload = {
@@ -192,14 +196,17 @@ export default function AdminCampaignEdit() {
   };
 
   const TABS = [
-    { id: 'basic', label: 'Details' },
-    { id: 'questions', label: `Questions (${form.questions.length})` },
+    { id: 'basic', label: 'Details', warn: !form.title.trim() || !form.videoUrl.trim() },
+    { id: 'questions', label: `Questions (${form.questions.length})`, warn: form.questions.length === 0 },
     { id: 'templates', label: 'Templates' },
   ];
 
   const tabStyle = (t) => ({
-    padding: '8px 18px', borderRadius: 8, fontFamily: DISP, fontWeight: 700, fontSize: 14, cursor: 'pointer', border: `2px solid ${T.ink}`,
-    background: tab === t ? T.ink : '#fff', color: tab === t ? T.bg : T.ink,
+    padding: '8px 18px', borderRadius: 8, fontFamily: DISP, fontWeight: 700, fontSize: 14, cursor: 'pointer',
+    border: `2px solid ${t.warn ? '#e53' : T.ink}`,
+    background: tab === t.id ? T.ink : '#fff',
+    color: tab === t.id ? T.bg : (t.warn ? '#e53' : T.ink),
+    position: 'relative',
   });
 
   if (loading) return (
@@ -222,8 +229,8 @@ export default function AdminCampaignEdit() {
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
           {TABS.map(t => (
-            <button key={t.id} style={tabStyle(t.id)} onClick={() => setTab(t.id)}>
-              {t.label}
+            <button key={t.id} style={tabStyle(t)} onClick={() => setTab(t.id)}>
+              {t.warn ? '⚠ ' : ''}{t.label}
             </button>
           ))}
         </div>
@@ -250,8 +257,8 @@ export default function AdminCampaignEdit() {
                     <input type="datetime-local" value={form.endTime} onChange={e => set('endTime', e.target.value)} style={inputStyle} />
                   </FieldGroup>
                 </div>
-                <FieldGroup label="Video URL (optional — overrides global video)">
-                  <input value={form.videoUrl} onChange={e => set('videoUrl', e.target.value)} placeholder="https://youtu.be/..." style={inputStyle} />
+                <FieldGroup label="Video URL *">
+                  <input value={form.videoUrl} onChange={e => set('videoUrl', e.target.value)} placeholder="https://youtu.be/..." style={{ ...inputStyle, borderColor: !form.videoUrl.trim() ? '#e53' : T.ink }} />
                 </FieldGroup>
                 <FieldGroup label="Video title">
                   <input value={form.videoTitle} onChange={e => set('videoTitle', e.target.value)} placeholder="Introduction to AIESEC" style={inputStyle} />
@@ -267,8 +274,13 @@ export default function AdminCampaignEdit() {
 
             {tab === 'questions' && (
               <>
-                <div style={{ fontSize: 13, opacity: 0.6, marginBottom: 18 }}>
-                  Leave empty to use global questions. Add custom questions for this campaign only.
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                  <div style={{ fontSize: 13, opacity: 0.6 }}>
+                    Questions are required. Each question needs text and all 4 option labels filled in.
+                  </div>
+                  {form.questions.length === 0 && (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#e53', background: '#e5330011', border: '1.5px solid #e53', borderRadius: 6, padding: '2px 8px', whiteSpace: 'nowrap' }}>Required</span>
+                  )}
                 </div>
                 <QuestionEditor questions={form.questions} onChange={qs => set('questions', qs)} />
               </>

@@ -97,19 +97,34 @@ router.get('/admin/:id/full', authMiddleware, async (req, res) => {
   }
 });
 
+// Strip frontend-generated temp _id values from questions (e.g. "q_1234567890")
+function sanitizeQuestions(questions) {
+  if (!Array.isArray(questions)) return [];
+  return questions.map(q => {
+    const clean = { ...q };
+    if (clean._id && !/^[a-f\d]{24}$/i.test(String(clean._id))) {
+      delete clean._id;
+    }
+    return clean;
+  });
+}
+
 // POST /api/campaigns  — create campaign
 router.post('/', authMiddleware, [
   body('title').trim().notEmpty().withMessage('Title is required'),
+  body('videoUrl').trim().notEmpty().withMessage('Video URL is required'),
+  body('questions').isArray({ min: 1 }).withMessage('At least one question is required'),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ error: errors.array()[0].msg });
   try {
-    const campaign = new Campaign({ ...req.body, admin: req.admin.id });
+    const body = { ...req.body, questions: sanitizeQuestions(req.body.questions), admin: req.admin.id };
+    const campaign = new Campaign(body);
     await campaign.save();
     res.status(201).json({ campaign });
   } catch (err) {
     console.error('Create campaign error:', err);
-    res.status(500).json({ error: 'Server error.' });
+    res.status(500).json({ error: err.message || 'Server error.' });
   }
 });
 
@@ -118,11 +133,19 @@ router.put('/:id', authMiddleware, async (req, res) => {
   try {
     const filter = { _id: req.params.id };
     if (req.admin.role !== 'superAdmin') filter.admin = req.admin.id;
-    const campaign = await Campaign.findOneAndUpdate(filter, req.body, { new: true, runValidators: true });
+    const campaign = await Campaign.findOne(filter);
     if (!campaign) return res.status(404).json({ error: 'Campaign not found.' });
+
+    // Apply all fields manually so Mongoose properly handles subdoc _id casting
+    const allowed = ['title', 'description', 'location', 'videoUrl', 'videoTitle', 'startTime', 'endTime', 'isActive', 'emailTemplate', 'whatsappTemplate', 'telegramTemplate'];
+    allowed.forEach(f => { if (req.body[f] !== undefined) campaign[f] = req.body[f]; });
+    if (req.body.questions !== undefined) campaign.questions = sanitizeQuestions(req.body.questions);
+
+    await campaign.save();
     res.json({ campaign });
   } catch (err) {
-    res.status(500).json({ error: 'Server error.' });
+    console.error('Update campaign error:', err);
+    res.status(500).json({ error: err.message || 'Server error.' });
   }
 });
 
