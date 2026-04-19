@@ -36,7 +36,11 @@ export default function Register() {
       setUser({ userName: form.name, userEmail: form.email, userPhone: form.phone });
       setSessionId(data.sessionId);
       toast.success(`Welcome, ${form.name}!`);
-      navigate('/video');
+      if (!campaignId) {
+        navigate('/play');
+      } else {
+        navigate('/video');
+      }
     } catch (err) {
       const msg = err.response?.data?.error || 'Registration failed. Please try again.';
       toast.error(msg);

@@ -1,76 +1,24 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useSocket } from '../hooks/useSocket';
 import api from '../utils/api';
 import { T, LGStar, LGDiamond, LGCross, LGSpark, FloatShape, Marquee, BigButton, Pill } from '../components/ui';
 
 const DISP = "'Space Grotesk', sans-serif";
 
-function LeaderboardRow({ entry, rank, you = false }) {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 12,
-      padding: '12px 16px', borderRadius: 14,
-      background: you ? T.pink : '#fff',
-      border: `2px solid ${T.ink}`,
-      boxShadow: you ? `3px 3px 0 ${T.ink}` : 'none',
-    }}>
-      <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 22, width: 36, flexShrink: 0, letterSpacing: '-0.03em' }}>
-        {String(rank).padStart(2, '0')}
-      </span>
-      <div style={{
-        width: 32, height: 32, borderRadius: 999, background: T.ink,
-        color: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontWeight: 700, fontSize: 13, flexShrink: 0,
-      }}>
-        {(entry.userName || '?')[0].toUpperCase()}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {entry.userName || 'Anonymous'}
-        </div>
-      </div>
-      <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, letterSpacing: '-0.03em', flexShrink: 0 }}>
-        {(entry.score || 0).toLocaleString()}
-      </span>
-    </div>
-  );
-}
-
 export default function Home() {
   const navigate = useNavigate();
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [stats, setStats] = useState({ totalPlayers: 0, avgScore: 0 });
-  const [loading, setLoading] = useState(true);
-
-  const handleLeaderboardUpdate = useCallback((data) => {
-    if (Array.isArray(data)) setLeaderboard(data.slice(0, 5));
-  }, []);
-
-  const { isConnected } = useSocket('leaderboard:update', handleLeaderboardUpdate);
+  const [stats, setStats] = useState({ totalPlayers: 0 });
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [lb, statsRes] = await Promise.all([
-          api.get('/leaderboard'),
-          api.get('/leaderboard/stats'),
-        ]);
-        setLeaderboard(lb.data.leaderboard?.slice(0, 5) || []);
-        setStats({
-          totalPlayers: statsRes.data?.totalPlayers ?? 0,
-          avgScore: statsRes.data?.avgScore ?? 0,
-        });
-      } catch {}
-      finally { setLoading(false); }
-    };
-    load();
+    api.get('/leaderboard/stats')
+      .then(({ data }) => setStats({ totalPlayers: data?.totalPlayers ?? 0 }))
+      .catch(() => {});
   }, []);
 
   const HOW_STEPS = [
-    { n: '01', t: 'Tell us about you', d: 'Name, email, campus. 30 seconds, tops.', bg: T.pink },
-    { n: '02', t: 'Watch a 45-sec intro', d: 'Meet AIESEC leaders & the mission.', bg: T.green },
+    { n: '01', t: 'Enter your campaign PIN', d: 'Get the PIN from your AIESEC LC or scan their QR code.', bg: T.pink },
+    { n: '02', t: 'Tell us about you', d: 'Name, email, phone. 30 seconds, tops.', bg: T.green },
     { n: '03', t: 'Play the quiz', d: 'Scenario questions. Pick fast — speed scores.', bg: T.yellow },
     { n: '04', t: 'Get your results', d: 'See your score + your shot at a volunteer slot abroad.', bg: T.navy, fg: T.bg },
   ];
@@ -108,7 +56,7 @@ export default function Home() {
             </p>
 
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 52 }}>
-              <BigButton bg={T.ink} color={T.bg} size="lg" arrow onClick={() => navigate('/register')}>
+              <BigButton bg={T.ink} color={T.bg} size="lg" arrow onClick={() => navigate('/play')}>
                 Start the game
               </BigButton>
               <BigButton bg="transparent" color={T.ink} size="lg" onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}>
@@ -192,58 +140,9 @@ export default function Home() {
               AIESEC operates in 120+ countries and has empowered over 1 million young leaders worldwide.
             </div>
           </div>
-          <BigButton bg={T.ink} color={T.bg} size="md" arrow onClick={() => navigate('/register')}>
+          <BigButton bg={T.ink} color={T.bg} size="md" arrow onClick={() => navigate('/play')}>
             I'm in
           </BigButton>
-        </motion.div>
-      </section>
-
-      {/* ── LEADERBOARD PREVIEW ── */}
-      <section style={{ padding: '0 40px 80px', maxWidth: 700, margin: '0 auto' }}>
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          <div style={{
-            border: `2px solid ${T.ink}`, borderRadius: 24,
-            background: T.muted, boxShadow: `5px 5px 0 ${T.ink}`,
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              padding: '20px 24px', borderBottom: `2px solid ${T.ink}`,
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            }}>
-              <div>
-                <Pill bg={T.yellow} border={T.ink} style={{ marginBottom: 8 }}>🏆 Leaderboard</Pill>
-                <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 22, letterSpacing: '-0.03em' }}>Top players this season</div>
-              </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                {isConnected && <span className="live-badge"><span className="live-dot" />Live</span>}
-                <button
-                  onClick={() => navigate('/leaderboard')}
-                  style={{
-                    background: 'transparent', border: `1.5px solid ${T.ink}`, color: T.ink,
-                    borderRadius: 8, padding: '5px 14px', fontFamily: "'Inter', sans-serif",
-                    fontWeight: 600, fontSize: 12, cursor: 'pointer',
-                  }}
-                >
-                  View all →
-                </button>
-              </div>
-            </div>
-            <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="skeleton" style={{ height: 56 }} />
-                ))
-              ) : leaderboard.length === 0 ? (
-                <div style={{ padding: '24px 0', textAlign: 'center', opacity: 0.5, fontSize: 14 }}>
-                  No players yet. Be the first! 🚀
-                </div>
-              ) : (
-                leaderboard.map((entry, i) => (
-                  <LeaderboardRow key={entry._id || i} entry={entry} rank={i + 1} />
-                ))
-              )}
-            </div>
-          </div>
         </motion.div>
       </section>
 

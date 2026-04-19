@@ -13,13 +13,12 @@ import CampaignLeaderboard from './pages/CampaignLeaderboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminAttempts from './pages/admin/AdminAttempts';
-import AdminQuestions from './pages/admin/AdminQuestions';
-import AdminVideo from './pages/admin/AdminVideo';
 import AdminCampaigns from './pages/admin/AdminCampaigns';
 import AdminCampaignEdit from './pages/admin/AdminCampaignEdit';
 import AdminCampaignEntries from './pages/admin/AdminCampaignEntries';
 import AdminAdmins from './pages/admin/AdminAdmins';
 import Navbar from './components/Navbar';
+import AdminLayout from './components/AdminLayout';
 
 function QuizGuard({ children }) {
   const { sessionId } = useQuiz();
@@ -37,14 +36,14 @@ function AnswersGuard({ children }) {
 function AdminGuard({ children }) {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
-  return children;
+  return <AdminLayout>{children}</AdminLayout>;
 }
 
 function SuperAdminGuard({ children }) {
   const { isAuthenticated, isSuperAdmin } = useAuth();
   if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
   if (!isSuperAdmin) return <Navigate to="/admin/dashboard" replace />;
-  return children;
+  return <AdminLayout>{children}</AdminLayout>;
 }
 
 export default function App() {
@@ -71,8 +70,6 @@ export default function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
         <Route path="/admin/attempts" element={<AdminGuard><AdminAttempts /></AdminGuard>} />
-        <Route path="/admin/questions" element={<AdminGuard><AdminQuestions /></AdminGuard>} />
-        <Route path="/admin/video" element={<AdminGuard><AdminVideo /></AdminGuard>} />
         <Route path="/admin/campaigns" element={<AdminGuard><AdminCampaigns /></AdminGuard>} />
         <Route path="/admin/campaigns/new" element={<AdminGuard><AdminCampaignEdit /></AdminGuard>} />
         <Route path="/admin/campaigns/:id" element={<AdminGuard><AdminCampaignEdit /></AdminGuard>} />

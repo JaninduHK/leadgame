@@ -11,7 +11,7 @@ const DISP = "'Space Grotesk', sans-serif";
 export default function PinEntry() {
   const navigate = useNavigate();
   const { pin: paramPin } = useParams();
-  const { setCampaign } = useQuiz();
+  const { setCampaign, sessionId } = useQuiz();
   const [pin, setPin] = useState((paramPin || '').toUpperCase());
   const [loading, setLoading] = useState(false);
   const [campaign, setCampaignInfo] = useState(null);
@@ -59,7 +59,8 @@ export default function PinEntry() {
 
   const handleContinue = () => {
     setCampaign(campaign._id, campaign.title);
-    navigate('/register');
+    // If already registered (came from Register page), go straight to video
+    navigate(sessionId ? '/video' : '/register');
   };
 
   return (
@@ -153,10 +154,10 @@ export default function PinEntry() {
 
           <div style={{ textAlign: 'center' }}>
             <button
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/leaderboard')}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink, fontSize: 14, opacity: 0.55, textDecoration: 'underline', fontFamily: "'Inter', sans-serif" }}
             >
-              Skip — play without a campaign
+              View active campaigns instead
             </button>
           </div>
         </motion.div>
