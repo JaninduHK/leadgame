@@ -2,20 +2,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import Mascot from '../components/Mascot';
-import Timer from '../components/Timer';
-import ProgressBar from '../components/ProgressBar';
 import { useQuiz } from '../context/QuizContext';
 import { useTimer } from '../hooks/useTimer';
-import { calculateScore } from '../utils/scoring';
 import api from '../utils/api';
+import { T, LGStar, LGSpark, FloatShape, BigButton, Pill } from '../components/ui';
 
-const OPTION_COLORS = {
-  A: { bg: 'rgba(3,126,243,0.2)', border: 'rgba(3,126,243,0.5)', active: 'rgba(3,126,243,0.4)', label: '#037EF3' },
-  B: { bg: 'rgba(13,177,75,0.2)', border: 'rgba(13,177,75,0.5)', active: 'rgba(13,177,75,0.4)', label: '#0DB14B' },
-  C: { bg: 'rgba(248,90,64,0.2)', border: 'rgba(248,90,64,0.5)', active: 'rgba(248,90,64,0.4)', label: '#F85A40' },
-  D: { bg: 'rgba(255,200,69,0.2)', border: 'rgba(255,200,69,0.5)', active: 'rgba(255,200,69,0.4)', label: '#FFC845' },
-};
+const DISP = "'Space Grotesk', sans-serif";
+const OPTION_BG = { A: T.pink, B: T.bg, C: T.green, D: T.bg };
 
 export default function QuizPage() {
   const navigate = useNavigate();
@@ -28,36 +21,30 @@ export default function QuizPage() {
   const [answered, setAnswered] = useState(false);
   const [scoreFloat, setScoreFloat] = useState(null);
   const [totalScore, setTotalScore] = useState(0);
-  const [mascotPose, setMascotPose] = useState('waving');
   const [allAnswers, setAllAnswers] = useState([]);
-  const [quizStartTime, setQuizStartTime] = useState(null);
   const questionStartTimeRef = useRef(Date.now());
 
   const currentQuestion = questions[current];
 
   const handleTimerEnd = useCallback(() => {
-    if (!answered && currentQuestion) {
-      handleAnswer(null); // timeout = no answer
-    }
+    if (!answered && currentQuestion) handleAnswer(null);
   }, [answered, currentQuestion]);
 
   const { timeLeft, start: startTimer, reset: resetTimer } = useTimer(
     currentQuestion?.timeLimit || 30,
-    handleTimerEnd
+    handleTimerEnd,
   );
 
   useEffect(() => {
     api.get('/quiz/questions')
       .then(({ data }) => {
         setQuestions(data);
-        setQuizStartTime(Date.now());
         questionStartTimeRef.current = Date.now();
       })
       .catch(() => toast.error('Failed to load questions'))
       .finally(() => setLoading(false));
   }, []);
 
-  // Start timer when question changes
   useEffect(() => {
     if (questions.length > 0 && !loading) {
       resetTimer(currentQuestion?.timeLimit || 30);
@@ -65,7 +52,6 @@ export default function QuizPage() {
       setTimeout(() => startTimer(), 300);
       setSelected(null);
       setAnswered(false);
-      setMascotPose('thinking');
     }
   }, [current, questions.length, loading]);
 
@@ -76,38 +62,25 @@ export default function QuizPage() {
     const timeTaken = Math.round((Date.now() - questionStartTimeRef.current) / 1000);
     const isCorrect = value !== null && value === currentQuestion?.correctAnswer;
 
-    // Compute points earned for this question
-    let pointsEarned = 0;
     if (isCorrect) {
       const basePoints = currentQuestion.points || 100;
       const timeLimit = currentQuestion.timeLimit || 30;
       const speedMultiplier = Math.max(0.5, (timeLimit - timeTaken) / timeLimit);
-      pointsEarned = Math.round(basePoints * (1 + speedMultiplier));
+      const pointsEarned = Math.round(basePoints * (1 + speedMultiplier));
       setTotalScore(prev => prev + pointsEarned);
-      setMascotPose('celebrating');
       setScoreFloat(`+${pointsEarned}`);
       setTimeout(() => setScoreFloat(null), 1500);
-    } else {
-      setMascotPose('sad');
     }
 
-    const answer = {
-      questionId: currentQuestion._id,
-      selectedOption: value,
-      isCorrect,
-      timeTaken,
-    };
-
+    const answer = { questionId: currentQuestion._id, selectedOption: value, isCorrect, timeTaken };
     setSelected(value);
 
     setTimeout(() => {
       const updatedAnswers = [...allAnswers, answer];
       setAllAnswers(updatedAnswers);
-
       if (current < questions.length - 1) {
         setCurrent(prev => prev + 1);
       } else {
-        // Quiz complete
         setAnswers(updatedAnswers);
         navigate('/volunteer');
       }
@@ -116,173 +89,187 @@ export default function QuizPage() {
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh', background: '#0A1628',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16,
-      }}>
-        <div className="anim-spin" style={{
-          width: 56, height: 56, border: '4px solid rgba(255,255,255,0.1)',
-          borderTop: '4px solid #037EF3', borderRadius: '50%',
-        }} />
-        <div style={{ fontWeight: 700, color: 'rgba(255,255,255,0.6)', fontSize: 16 }}>Loading quiz...</div>
+      <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
+        <div className="anim-spin" style={{ width: 48, height: 48, border: `4px solid ${T.muted}`, borderTop: `4px solid ${T.ink}`, borderRadius: '50%' }} />
+        <div style={{ fontFamily: DISP, fontWeight: 600, opacity: 0.6 }}>Loading quiz…</div>
       </div>
     );
   }
 
   if (!currentQuestion) return null;
 
+  const timeLimit = currentQuestion.timeLimit || 30;
+  const timePct = timeLeft / timeLimit;
+  const timerColor = timePct > 0.4 ? T.green : timePct > 0.2 ? T.yellow : T.pink;
+
   return (
-    <div style={{ minHeight: '100vh', background: '#0A1628', padding: '16px 16px 100px' }}>
-      {/* Background */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(3,126,243,0.1) 0%, transparent 70%)', top: '-100px', right: '-100px' }} />
-        <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(13,177,75,0.08) 0%, transparent 70%)', bottom: '-50px', left: '-50px' }} />
+    <div style={{ minHeight: '100vh', background: T.bg, fontFamily: "'Inter', sans-serif", color: T.ink }}>
+
+      {/* ── HEADER ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 16, padding: '16px 32px',
+        borderBottom: `2px solid ${T.ink}`,
+        background: T.bg,
+      }}>
+        <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, letterSpacing: '-0.03em', marginRight: 8 }}>LEAD GAME</div>
+
+        {/* Progress segments */}
+        <div style={{ flex: 1, display: 'flex', gap: 4 }}>
+          {questions.map((_, i) => (
+            <div key={i} style={{
+              flex: 1, height: 8, borderRadius: 999,
+              border: `1.5px solid ${T.ink}`,
+              background: i < current ? T.green : i === current ? T.yellow : 'transparent',
+              transition: 'background 0.3s',
+            }} />
+          ))}
+        </div>
+
+        <div style={{ fontFamily: DISP, fontWeight: 600, fontSize: 13, flexShrink: 0 }}>
+          {String(current + 1).padStart(2, '0')} / {String(questions.length).padStart(2, '0')}
+        </div>
+
+        {/* Timer pill */}
+        <Pill bg={timerColor} border={T.ink} style={{ flexShrink: 0, fontFamily: DISP, fontWeight: 700, fontSize: 14 }}>
+          ⏱ {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
+        </Pill>
+
+        {/* Score */}
+        <Pill bg={T.yellow} border={T.ink} style={{ flexShrink: 0, fontFamily: DISP, fontWeight: 700 }}>
+          {totalScore.toLocaleString()} pts
+        </Pill>
       </div>
 
-      <div style={{ maxWidth: 680, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        {/* Top bar */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20,
-          flexWrap: 'wrap',
-        }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <ProgressBar current={current + 1} total={questions.length} />
-          </div>
-          <Timer
-            timeLeft={timeLeft}
-            totalTime={currentQuestion.timeLimit || 30}
-            size={72}
-          />
-          <div style={{
-            background: 'rgba(255,200,69,0.15)', border: '1px solid rgba(255,200,69,0.3)',
-            borderRadius: 12, padding: '8px 16px', textAlign: 'center', minWidth: 80,
-          }}>
-            <div style={{ color: '#FFC845', fontWeight: 900, fontSize: 20 }}>{totalScore}</div>
-            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 700 }}>PTS</div>
-          </div>
-        </div>
-
-        {/* Mascot + speech */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-          <Mascot pose={mascotPose} size={80} />
-        </div>
-
-        {/* Question card */}
+      {/* ── BODY ── */}
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 32px' }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={current}
-            initial={{ opacity: 0, x: 50 }}
+            initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.25 }}
           >
-            <div className="glass-card" style={{ padding: '28px 24px', marginBottom: 20, position: 'relative' }}>
-              {/* Score float animation */}
-              {scoreFloat && (
-                <motion.div
-                  initial={{ opacity: 1, y: 0, scale: 1 }}
-                  animate={{ opacity: 0, y: -60, scale: 1.4 }}
-                  transition={{ duration: 1.2 }}
-                  style={{
-                    position: 'absolute', top: 20, right: 20,
-                    color: '#0DB14B', fontWeight: 900, fontSize: 28,
-                    pointerEvents: 'none', zIndex: 10,
-                  }}
-                >
-                  {scoreFloat}
-                </motion.div>
-              )}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'start' }} className="quiz-grid">
 
-              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, fontWeight: 700, marginBottom: 12 }}>
-                Question {current + 1} · {currentQuestion.points} pts base
-              </div>
-              <h2 style={{ fontWeight: 800, fontSize: 'clamp(17px, 3vw, 22px)', lineHeight: 1.4 }}>
-                {currentQuestion.text}
-              </h2>
-            </div>
+              {/* LEFT: Question */}
+              <div style={{ position: 'relative' }}>
+                <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.16em', opacity: 0.5, marginBottom: 16 }}>
+                  Scenario · Question {current + 1}
+                </div>
+                <h2 style={{
+                  fontFamily: DISP, fontWeight: 700,
+                  fontSize: 'clamp(22px, 3vw, 36px)',
+                  lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: 28,
+                }}>
+                  {currentQuestion.text}
+                </h2>
 
-            {/* Answer grid */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: 12,
-            }}>
-              {currentQuestion.options.map((option) => {
-                const value = option.value;
-                const colors = OPTION_COLORS[value];
-                const isSelected = selected === value;
-                const isCorrect = answered && value === currentQuestion.correctAnswer;
-                const isWrong = answered && isSelected && !isCorrect;
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <Pill border={T.ink}>+{currentQuestion.points || 100} for accuracy</Pill>
+                  <Pill border={T.ink} bg={T.muted}>+speed bonus</Pill>
+                </div>
 
-                let bg = colors.bg;
-                let border = `2px solid ${colors.border}`;
-                let textColor = 'white';
-                let animation = undefined;
-
-                if (isCorrect && answered) {
-                  bg = 'rgba(13,177,75,0.35)';
-                  border = '2px solid #0DB14B';
-                  animation = 'correct-flash 0.4s ease';
-                } else if (isWrong) {
-                  bg = 'rgba(248,90,64,0.35)';
-                  border = '2px solid #F85A40';
-                  animation = 'wrong-flash 0.4s ease';
-                }
-
-                return (
-                  <motion.button
-                    key={value}
-                    whileHover={!answered ? { scale: 1.02, background: colors.active } : {}}
-                    whileTap={!answered ? { scale: 0.98 } : {}}
-                    onClick={() => !answered && handleAnswer(value)}
-                    disabled={answered}
+                {/* Score float */}
+                {scoreFloat && (
+                  <motion.div
+                    initial={{ opacity: 1, y: 0, scale: 1 }}
+                    animate={{ opacity: 0, y: -60, scale: 1.4 }}
+                    transition={{ duration: 1.2 }}
                     style={{
-                      background: bg,
-                      border,
-                      borderRadius: 16,
-                      padding: '18px 20px',
-                      cursor: answered ? 'default' : 'pointer',
-                      textAlign: 'left',
-                      display: 'flex', alignItems: 'center', gap: 14,
-                      transition: 'all 0.2s',
-                      animation,
-                      minHeight: 68,
-                      fontFamily: 'Nunito, sans-serif',
+                      position: 'absolute', top: 0, right: 0,
+                      fontFamily: DISP, fontWeight: 700, fontSize: 32,
+                      color: T.green, pointerEvents: 'none',
                     }}
                   >
-                    <div style={{
-                      width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                      background: isCorrect && answered ? '#0DB14B' : isWrong ? '#F85A40' : colors.active,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 900, fontSize: 15, color: 'white',
-                    }}>
-                      {isCorrect && answered ? '✓' : isWrong ? '✗' : value}
-                    </div>
-                    <span style={{
-                      fontWeight: 700, fontSize: 15, color: textColor,
-                      lineHeight: 1.4, flex: 1,
-                    }}>
-                      {option.label}
-                    </span>
-                  </motion.button>
-                );
-              })}
-            </div>
+                    {scoreFloat}
+                  </motion.div>
+                )}
 
-            {/* Timeout message */}
-            {answered && selected === null && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                style={{
-                  marginTop: 16, textAlign: 'center', padding: '12px',
-                  background: 'rgba(248,90,64,0.15)', borderRadius: 12,
-                  color: '#F85A40', fontWeight: 700, fontSize: 14,
-                }}
-              >
-                ⏰ Time's up! The correct answer was {currentQuestion.correctAnswer}.
-              </motion.div>
-            )}
+                <FloatShape bottom={-20} left={0} delay={0.3} duration={3.5}>
+                  <LGStar size={28} color={T.pink} />
+                </FloatShape>
+                <FloatShape top={0} right={0} delay={1} duration={4}>
+                  <LGSpark size={24} color={T.green} />
+                </FloatShape>
+              </div>
+
+              {/* RIGHT: Options */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {currentQuestion.options.map((option) => {
+                  const val = option.value;
+                  const isSelected = selected === val;
+                  const isCorrect = answered && val === currentQuestion.correctAnswer;
+                  const isWrong = answered && isSelected && !isCorrect;
+
+                  let bg = OPTION_BG[val] || T.bg;
+                  let shadow = `3px 3px 0 ${T.ink}`;
+                  let transform = 'none';
+                  let animation;
+
+                  if (isCorrect && answered) {
+                    bg = T.green;
+                    shadow = `5px 5px 0 ${T.ink}`;
+                    transform = 'translate(-2px,-2px)';
+                    animation = 'correct-flash 0.4s ease';
+                  } else if (isWrong) {
+                    bg = T.pink;
+                    animation = 'wrong-flash 0.4s ease';
+                  } else if (isSelected) {
+                    shadow = `5px 5px 0 ${T.ink}`;
+                    transform = 'translate(-2px,-2px)';
+                  }
+
+                  return (
+                    <motion.button
+                      key={val}
+                      whileHover={!answered ? { y: -2 } : {}}
+                      whileTap={!answered ? { scale: 0.98 } : {}}
+                      onClick={() => !answered && handleAnswer(val)}
+                      disabled={answered}
+                      style={{
+                        background: bg, border: `2px solid ${T.ink}`,
+                        borderRadius: 18, padding: '16px 20px',
+                        cursor: answered ? 'default' : 'pointer',
+                        textAlign: 'left', display: 'flex', alignItems: 'center', gap: 16,
+                        boxShadow: shadow, transform,
+                        transition: answered ? 'none' : 'all 0.2s',
+                        animation,
+                        fontFamily: "'Inter', sans-serif",
+                      }}
+                    >
+                      <div style={{
+                        width: 40, height: 40, borderRadius: 999, flexShrink: 0,
+                        background: (isCorrect && answered) ? T.ink : isWrong ? T.ink : T.bg,
+                        color: (isCorrect && answered) || isWrong ? T.bg : T.ink,
+                        border: `2px solid ${T.ink}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: DISP, fontWeight: 700, fontSize: 16,
+                      }}>
+                        {isCorrect && answered ? '✓' : isWrong ? '✗' : val}
+                      </div>
+                      <span style={{ fontWeight: 500, fontSize: 15, lineHeight: 1.4, flex: 1 }}>
+                        {option.label}
+                      </span>
+                    </motion.button>
+                  );
+                })}
+
+                {answered && selected === null && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    style={{
+                      marginTop: 8, padding: '12px 16px',
+                      background: T.muted, border: `2px solid ${T.ink}`, borderRadius: 12,
+                      fontWeight: 600, fontSize: 14,
+                    }}
+                  >
+                    ⏰ Time's up! The correct answer was {currentQuestion.correctAnswer}.
+                  </motion.div>
+                )}
+              </div>
+            </div>
           </motion.div>
         </AnimatePresence>
       </div>

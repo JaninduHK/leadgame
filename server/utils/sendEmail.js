@@ -12,7 +12,17 @@ const createTransporter = () => {
   });
 };
 
-const sendResultEmail = async ({ name, email, score, rank, totalPlayers, correctAnswers, totalQuestions }) => {
+function renderTemplate(template, vars) {
+  return template
+    .replace(/\{\{name\}\}/g, vars.name || '')
+    .replace(/\{\{score\}\}/g, vars.score ?? '')
+    .replace(/\{\{rank\}\}/g, vars.rank ?? '')
+    .replace(/\{\{accuracy\}\}/g, vars.accuracy ?? '')
+    .replace(/\{\{campaign\}\}/g, vars.campaign || 'AIESEC Malaysia')
+    .replace(/\{\{totalPlayers\}\}/g, vars.totalPlayers ?? '');
+}
+
+const sendResultEmail = async ({ name, email, score, rank, totalPlayers, correctAnswers, totalQuestions, emailTemplate, campaignTitle }) => {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.log('Email not configured, skipping email send.');
     return;
@@ -20,6 +30,23 @@ const sendResultEmail = async ({ name, email, score, rank, totalPlayers, correct
 
   const transporter = createTransporter();
   const accuracy = Math.round((correctAnswers / totalQuestions) * 100);
+
+  // Use campaign-specific plain-text template if provided
+  if (emailTemplate) {
+    const body = renderTemplate(emailTemplate, { name, score, rank, totalPlayers, accuracy, campaign: campaignTitle || 'AIESEC Malaysia' });
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM || 'AIESEC Malaysia <noreply@aiesec.org.my>',
+        to: email,
+        subject: `Your ${campaignTitle || 'AIESEC'} Quiz Results — #${rank} with ${score} pts!`,
+        text: body,
+      });
+      console.log(`📧 Campaign result email sent to ${email}`);
+    } catch (err) {
+      console.error('Email send error:', err.message);
+    }
+    return;
+  }
 
   const html = `
 <!DOCTYPE html>

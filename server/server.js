@@ -156,9 +156,14 @@ async function connectDB() {
     await Admin.create({
       email: process.env.ADMIN_EMAIL || 'admin@aiesec.org.my',
       password: await bcrypt.hash(process.env.ADMIN_PASSWORD || 'Admin@123456', 12),
-      name: 'AIESEC Admin',
+      name: 'AIESEC Super Admin',
+      role: 'superAdmin',
+      lcName: 'AIESEC Malaysia',
     });
-    console.log('✅ Admin user created');
+    console.log('✅ Super admin user created');
+  } else if (!existingAdmin.role || existingAdmin.role !== 'superAdmin') {
+    await Admin.findByIdAndUpdate(existingAdmin._id, { role: 'superAdmin', lcName: existingAdmin.lcName || 'AIESEC Malaysia' });
+    console.log('✅ Existing admin upgraded to superAdmin');
   }
 
   // Seed questions
@@ -197,6 +202,7 @@ app.use(async (req, res, next) => {
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/quiz', require('./routes/quiz'));
+app.use('/api/campaigns', require('./routes/campaigns'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));
 app.use('/api/admin', require('./routes/admin'));
 

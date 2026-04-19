@@ -1,160 +1,99 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { T } from './ui';
+import { useState } from 'react';
 
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuth();
+  const { logout, isSuperAdmin } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const isAdmin = location.pathname.startsWith('/admin');
   const isQuizFlow = ['/video', '/quiz', '/volunteer', '/results'].includes(location.pathname);
 
-  // Hide navbar in quiz flow pages
   if (isQuizFlow) return null;
-
-  const handleLogout = () => {
-    logout();
-    navigate('/admin/login');
-  };
 
   return (
     <>
-      {/* Desktop Navbar */}
-      <nav className="desktop-only" style={{
+      <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
-        background: 'rgba(10,22,40,0.85)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        padding: '0 32px',
-        height: 64,
+        background: T.bg, borderBottom: `2px solid ${T.ink}`,
+        padding: '0 40px', height: 64,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        fontFamily: "'Inter', sans-serif",
       }}>
-        {/* Logo */}
         <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
-            width: 36, height: 36,
-            background: 'linear-gradient(135deg, #037EF3, #0DB14B)',
-            borderRadius: 10,
+            width: 32, height: 32, background: T.navy, borderRadius: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 900, fontSize: 14, color: 'white',
-          }}>A</div>
-          <div>
-            <div style={{ color: 'white', fontWeight: 900, fontSize: 16, lineHeight: 1 }}>AIESEC Malaysia</div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>Quiz Platform</div>
-          </div>
+            fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 14, color: T.bg,
+          }}>L</div>
+          <span style={{
+            fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700,
+            fontSize: 18, color: T.ink, letterSpacing: '-0.03em',
+          }}>LEAD GAME</span>
+          <span style={{ fontSize: 11, color: T.ink, opacity: 0.45, marginLeft: 4 }}>by AIESEC Malaysia</span>
         </Link>
 
-        {/* Nav links */}
         {!isAdmin ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Link to="/leaderboard" style={{
-              color: 'rgba(255,255,255,0.8)', textDecoration: 'none',
-              fontWeight: 700, fontSize: 15, padding: '8px 16px',
-              borderRadius: 10, transition: 'all 0.2s',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 14px', borderRadius: 999,
+              border: `1.5px solid ${T.ink}`, color: T.ink,
+              textDecoration: 'none', fontSize: 13, fontWeight: 500,
+              transition: 'background 0.15s',
             }}
-              onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.1)'}
-              onMouseLeave={e => e.target.style.background = 'transparent'}
+              onMouseEnter={e => e.currentTarget.style.background = T.muted}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
               🏆 Leaderboard
             </Link>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={() => navigate('/register')}
               style={{
-                background: 'linear-gradient(135deg, #037EF3, #0DB14B)',
-                color: 'white', border: 'none', borderRadius: 50,
-                padding: '10px 24px', fontFamily: 'Nunito, sans-serif',
-                fontWeight: 800, fontSize: 15, cursor: 'pointer',
+                background: T.pink, color: T.ink, border: `2px solid ${T.ink}`,
+                borderRadius: 999, padding: '8px 20px',
+                fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: 13,
+                cursor: 'pointer', boxShadow: `3px 3px 0 ${T.ink}`,
+                transition: 'transform 0.15s, box-shadow 0.15s',
               }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translate(-1px,-1px)'; e.currentTarget.style.boxShadow = `4px 4px 0 ${T.ink}`; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `3px 3px 0 ${T.ink}`; }}
             >
-              Play Now 🚀
-            </motion.button>
+              Play now
+            </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {[
               { path: '/admin/dashboard', label: 'Dashboard' },
+              { path: '/admin/campaigns', label: 'Campaigns' },
               { path: '/admin/attempts', label: 'Attempts' },
               { path: '/admin/questions', label: 'Questions' },
               { path: '/admin/video', label: 'Video' },
+              ...(isSuperAdmin ? [{ path: '/admin/admins', label: 'Admins' }] : []),
             ].map(({ path, label }) => (
-              <Link
-                key={path}
-                to={path}
-                style={{
-                  color: location.pathname === path ? '#037EF3' : 'rgba(255,255,255,0.7)',
-                  textDecoration: 'none', fontWeight: 700, fontSize: 14,
-                  padding: '6px 12px', borderRadius: 8,
-                  background: location.pathname === path ? 'rgba(3,126,243,0.15)' : 'transparent',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {label}
-              </Link>
+              <Link key={path} to={path} style={{
+                color: location.pathname.startsWith(path) ? T.navy : T.ink,
+                textDecoration: 'none', fontWeight: 600, fontSize: 13,
+                padding: '5px 10px', borderRadius: 8,
+                background: location.pathname.startsWith(path) ? 'rgba(47,46,139,0.12)' : 'transparent',
+              }}>{label}</Link>
             ))}
             <button
-              onClick={handleLogout}
+              onClick={() => { logout(); navigate('/admin/login'); }}
               style={{
-                background: 'rgba(248,90,64,0.2)', color: '#F85A40',
-                border: '1px solid rgba(248,90,64,0.4)',
-                borderRadius: 8, padding: '6px 16px',
-                fontFamily: 'Nunito, sans-serif', fontWeight: 700,
-                fontSize: 13, cursor: 'pointer',
+                background: 'transparent', color: '#c0392b',
+                border: '2px solid #c0392b', borderRadius: 8, padding: '5px 14px',
+                fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer',
               }}
-            >
-              Logout
-            </button>
+            >Logout</button>
           </div>
         )}
       </nav>
-
-      {/* Mobile Bottom Nav (non-admin pages) */}
-      {!isAdmin && (
-        <nav className="mobile-only" style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1000,
-          background: 'rgba(10,22,40,0.95)',
-          backdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(255,255,255,0.1)',
-          display: 'flex', justifyContent: 'space-around', alignItems: 'center',
-          padding: '8px 0 20px',
-          height: 72,
-        }}>
-          <Link to="/" style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-            color: location.pathname === '/' ? '#037EF3' : 'rgba(255,255,255,0.5)',
-            textDecoration: 'none', fontSize: 11, fontWeight: 700,
-          }}>
-            <span style={{ fontSize: 20 }}>🏠</span>
-            Home
-          </Link>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/register')}
-            style={{
-              background: 'linear-gradient(135deg, #037EF3, #0DB14B)',
-              color: 'white', border: 'none', borderRadius: 50,
-              width: 56, height: 56, fontSize: 24, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginTop: -20, boxShadow: '0 4px 20px rgba(3,126,243,0.5)',
-            }}
-          >
-            🚀
-          </motion.button>
-          <Link to="/leaderboard" style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-            color: location.pathname === '/leaderboard' ? '#FFC845' : 'rgba(255,255,255,0.5)',
-            textDecoration: 'none', fontSize: 11, fontWeight: 700,
-          }}>
-            <span style={{ fontSize: 20 }}>🏆</span>
-            Scores
-          </Link>
-        </nav>
-      )}
-
-      {/* Spacer for fixed navbar */}
-      {!isQuizFlow && <div style={{ height: 64 }} className="desktop-only" />}
+      <div style={{ height: 64 }} />
     </>
   );
 }

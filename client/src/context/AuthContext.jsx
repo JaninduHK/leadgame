@@ -29,8 +29,11 @@ export function AuthProvider({ children }) {
     setAdminInfo(null);
   };
 
+  const role = adminInfo?.role || null;
+  const isSuperAdmin = role === 'superAdmin';
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, adminInfo, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, adminInfo, login, logout, role, isSuperAdmin }}>
       {children}
     </AuthContext.Provider>
   );

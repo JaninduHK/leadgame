@@ -3,31 +3,46 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Nunito', sans-serif;
-  background: #0A1628;
-  color: #ffffff;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #F4EFE1;
+  color: #14142B;
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
 :root {
-  --blue: #037EF3;
-  --green: #0DB14B;
-  --orange: #F85A40;
-  --yellow: #FFC845;
-  --navy: #0A1628;
-  --card-bg: rgba(255, 255, 255, 0.06);
-  --card-border: rgba(255, 255, 255, 0.1);
+  --bg: #F4EFE1;
+  --ink: #14142B;
+  --navy: #2F2E8B;
+  --pink: #FD64B6;
+  --green: #3FDA7C;
+  --yellow: #FFDF49;
+  --muted: #E8E4D4;
   --radius: 20px;
+  /* legacy compat */
+  --blue: #2F2E8B;
+  --orange: #FD64B6;
+  --card-bg: rgba(255,255,255,0.7);
+  --card-border: #14142B;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+::-webkit-scrollbar-track { background: var(--muted); }
+::-webkit-scrollbar-thumb { background: rgba(20,20,43,0.3); border-radius: 3px; }
 
 /* ========== KEYFRAME ANIMATIONS ========== */
+
+@keyframes lg-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-33.333%); }
+}
+
+@keyframes lg-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-14px); }
+}
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
@@ -70,29 +85,12 @@ body {
 
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(0.95); }
+  50% { opacity: 0.85; transform: scale(0.97); }
 }
 
 @keyframes pulse-ring {
   0% { transform: scale(0.8); opacity: 1; }
   100% { transform: scale(2); opacity: 0; }
-}
-
-@keyframes orb-move-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(40px, -60px) scale(1.1); }
-  66% { transform: translate(-30px, 40px) scale(0.9); }
-}
-
-@keyframes orb-move-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-50px, 30px) scale(0.95); }
-  66% { transform: translate(30px, -50px) scale(1.05); }
-}
-
-@keyframes orb-move-3 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(20px, 20px) scale(1.1); }
 }
 
 @keyframes fade-in-up {
@@ -121,18 +119,18 @@ body {
 }
 
 @keyframes correct-flash {
-  0%, 100% { background: rgba(13, 177, 75, 0.3); }
-  50% { background: rgba(13, 177, 75, 0.6); }
+  0%, 100% { background: rgba(63,218,124,0.35); }
+  50% { background: rgba(63,218,124,0.6); }
 }
 
 @keyframes wrong-flash {
-  0%, 100% { background: rgba(248, 90, 64, 0.3); }
-  50% { background: rgba(248, 90, 64, 0.6); }
+  0%, 100% { background: rgba(253,100,182,0.25); }
+  50% { background: rgba(253,100,182,0.45); }
 }
 
 @keyframes timer-warning {
-  0%, 100% { color: #F85A40; }
-  50% { color: #FFC845; }
+  0%, 100% { color: var(--pink); }
+  50% { color: var(--yellow); }
 }
 
 @keyframes live-pulse {
@@ -169,7 +167,7 @@ body {
 
 /* Skeleton loading */
 .skeleton {
-  background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+  background: linear-gradient(90deg, var(--muted) 25%, #d8d3c2 50%, var(--muted) 75%);
   background-size: 1000px 100%;
   animation: shimmer 1.5s infinite linear;
   border-radius: 8px;
@@ -180,65 +178,66 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(248, 90, 64, 0.2);
-  border: 1px solid rgba(248, 90, 64, 0.4);
-  color: #F85A40;
+  background: rgba(63,218,124,0.15);
+  border: 1.5px solid var(--green);
+  color: #0a6e38;
   padding: 4px 10px;
   border-radius: 50px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .live-dot {
   width: 8px;
   height: 8px;
-  background: #F85A40;
+  background: var(--green);
   border-radius: 50%;
   animation: live-pulse 1.2s ease-in-out infinite;
 }
 
-/* Glass card */
+/* Card — Lesa hard-shadow style */
 .glass-card {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #fff;
+  border: 2px solid var(--ink);
   border-radius: 20px;
+  box-shadow: 4px 4px 0 var(--ink);
 }
 
-/* Button base */
+/* Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, #037EF3, #0DB14B);
-  color: white;
-  border: none;
-  border-radius: 50px;
+  background: var(--ink);
+  color: var(--bg);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
   padding: 14px 32px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 800;
-  font-size: 16px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(3,126,243,0.4); }
-.btn-primary:active { transform: translateY(0); }
-
-.btn-secondary {
-  background: rgba(255,255,255,0.1);
-  color: white;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 50px;
-  padding: 14px 32px;
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 700;
   font-size: 16px;
   cursor: pointer;
-  transition: all 0.2s;
+  box-shadow: 4px 4px 0 var(--ink);
+  transition: transform 0.15s, box-shadow 0.15s;
+  display: inline-flex; align-items: center; gap: 8px;
 }
-.btn-secondary:hover { background: rgba(255,255,255,0.15); }
+.btn-primary:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--ink); }
 
-/* Mobile nav */
+.btn-secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 14px 32px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-secondary:hover { background: var(--muted); }
+
+/* Responsive */
 @media (max-width: 768px) {
   .desktop-only { display: none !important; }
+  .quiz-grid { grid-template-columns: 1fr !important; }
 }
 @media (min-width: 769px) {
   .mobile-only { display: none !important; }

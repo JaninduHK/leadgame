@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ReactPlayer from 'react-player';
 import toast from 'react-hot-toast';
-import Mascot from '../components/Mascot';
 import { useQuiz } from '../context/QuizContext';
 import api from '../utils/api';
 
@@ -65,22 +64,22 @@ export default function VideoPage() {
   if (loading) {
     return (
       <div style={{
-        minHeight: '100vh', background: '#0A1628',
+        minHeight: '100vh', background: '#F4EFE1',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <div style={{ textAlign: 'center' }}>
           <div className="anim-spin" style={{
-            width: 48, height: 48, border: '4px solid rgba(255,255,255,0.1)',
+            width: 48, height: 48, border: '4px solid rgba(20,20,43,0.12)',
             borderTop: '4px solid #037EF3', borderRadius: '50%', margin: '0 auto 16px',
           }} />
-          <div style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>Loading video...</div>
+          <div style={{ color: 'rgba(20,20,43,0.6)', fontWeight: 600 }}>Loading video…</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0A1628', padding: '24px' }}>
+    <div style={{ minHeight: '100vh', background: '#F4EFE1', padding: '24px' }}>
       {/* Background orb */}
       <div style={{
         position: 'fixed', width: 600, height: 600, borderRadius: '50%',
@@ -97,16 +96,15 @@ export default function VideoPage() {
         >
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
-            background: 'rgba(255,200,69,0.15)', border: '1px solid rgba(255,200,69,0.3)',
+            background: '#FFDF49', border: '2px solid #14142B',
             borderRadius: 50, padding: '6px 16px', marginBottom: 12,
           }}>
-            <span>Step 2 of 4</span>
-            <span style={{ color: '#FFC845', fontWeight: 800 }}>Watch Video</span>
+            <span style={{ fontWeight: 600, fontSize: 13, color: '#14142B' }}>Step 2 of 4 · Watch Video</span>
           </div>
-          <h1 style={{ fontWeight: 900, fontSize: 28, marginBottom: 8 }}>
-            Hey {userName}! 👋 Watch This First
+          <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 28, letterSpacing: '-0.02em', marginBottom: 8, color: '#14142B' }}>
+            Hey {userName}! Watch this first
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15 }}>
+          <p style={{ color: 'rgba(20,20,43,0.55)', fontSize: 15 }}>
             Quiz questions will be based on this video. Watch it carefully!
           </p>
         </motion.div>
@@ -150,10 +148,10 @@ export default function VideoPage() {
           </div>
 
           {/* Progress bar */}
-          <div style={{ height: 4, background: 'rgba(255,255,255,0.1)' }}>
+          <div style={{ height: 4, background: 'rgba(20,20,43,0.12)' }}>
             <div style={{
               height: '100%', width: `${progress}%`,
-              background: 'linear-gradient(90deg, #037EF3, #0DB14B)',
+              background: '#3FDA7C',
               transition: 'width 0.5s linear',
             }} />
           </div>
@@ -170,7 +168,7 @@ export default function VideoPage() {
               </div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
-                color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600,
+                color: 'rgba(20,20,43,0.55)', fontSize: 13, fontWeight: 600,
               }}>
                 <span>👁️ {viewsLeft} view{viewsLeft !== 1 ? 's' : ''} remaining</span>
                 {watched && <span style={{ color: '#0DB14B' }}>✅ Watched</span>}
@@ -182,11 +180,11 @@ export default function VideoPage() {
                 onClick={handleWatchAgain}
                 disabled={viewsLeft <= 0}
                 style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  color: viewsLeft > 0 ? 'white' : 'rgba(255,255,255,0.3)',
+                  background: 'rgba(20,20,43,0.06)',
+                  border: '2px solid rgba(20,20,43,0.25)',
+                  color: viewsLeft > 0 ? '#14142B' : 'rgba(20,20,43,0.35)',
                   borderRadius: 10, padding: '8px 16px',
-                  fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13,
+                  fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: 13,
                   cursor: viewsLeft > 0 ? 'pointer' : 'not-allowed',
                 }}
               >
@@ -201,12 +199,12 @@ export default function VideoPage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={handleStartQuiz}
                   style={{
-                    background: 'linear-gradient(135deg, #037EF3, #0DB14B)',
-                    color: 'white', border: 'none', borderRadius: 10,
+                    background: '#14142B',
+                    color: '#F4EFE1', border: '2px solid #14142B', borderRadius: 999,
                     padding: '8px 20px',
-                    fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 15,
+                    fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: 14,
                     cursor: 'pointer',
-                    boxShadow: '0 4px 16px rgba(3,126,243,0.4)',
+                    boxShadow: '3px 3px 0 #14142B',
                   }}
                 >
                   I'm Ready! 🧠
@@ -224,18 +222,17 @@ export default function VideoPage() {
           style={{
             display: 'flex', alignItems: 'flex-start', gap: 20,
             marginTop: 28, padding: '20px',
-            background: 'rgba(255,200,69,0.08)',
-            border: '1px solid rgba(255,200,69,0.2)', borderRadius: 16,
+            background: '#FFDF49',
+            border: '2px solid #14142B', borderRadius: 16,
           }}
         >
-          <Mascot pose="thinking" size={80} />
-          <div style={{ paddingTop: 10 }}>
-            <div style={{ fontWeight: 800, fontSize: 16, color: '#FFC845', marginBottom: 6 }}>
-              Aiko's Tips 💡
+          <div style={{ fontSize: 32 }}>💡</div>
+          <div>
+            <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 6, color: '#14142B' }}>
+              Tip
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, lineHeight: 1.6 }}>
-              Watch carefully! The quiz questions will be about AIESEC's mission, programs, and global impact.
-              Pay attention to names, numbers, and key facts. You've got this! 👀
+            <div style={{ color: 'rgba(20,20,43,0.75)', fontSize: 14, lineHeight: 1.6 }}>
+              Watch carefully! The quiz questions will be about AIESEC's mission, programs, and global impact. You've got this! 👀
             </div>
           </div>
         </motion.div>

@@ -1,200 +1,165 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import Leaderboard from '../components/Leaderboard';
-import { useSocket } from '../hooks/useSocket';
-import { useQuiz } from '../context/QuizContext';
 import api from '../utils/api';
-import { formatTime } from '../utils/scoring';
+import { T, BigButton, Pill, LGStar, FloatShape } from '../components/ui';
+
+const DISP = "'Space Grotesk', sans-serif";
+
+function Countdown({ endTime }) {
+  const [left, setLeft] = useState('');
+
+  useEffect(() => {
+    const calc = () => {
+      const diff = new Date(endTime) - Date.now();
+      if (diff <= 0) { setLeft('Ended'); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      if (h > 48) {
+        const d = Math.floor(h / 24);
+        setLeft(`${d}d ${h % 24}h`);
+      } else {
+        setLeft(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+      }
+    };
+    calc();
+    const t = setInterval(calc, 1000);
+    return () => clearInterval(t);
+  }, [endTime]);
+
+  return <span>{left}</span>;
+}
+
+function CampaignCard({ campaign, index }) {
+  const navigate = useNavigate();
+  const isActive = campaign.isActive && (!campaign.endTime || new Date(campaign.endTime) > new Date());
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.07 }}
+      onClick={() => navigate(`/leaderboard/${campaign._id}`)}
+      style={{
+        background: '#fff', border: `2px solid ${T.ink}`, borderRadius: 18,
+        padding: '20px 22px', boxShadow: `4px 4px 0 ${T.ink}`,
+        cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s',
+        display: 'flex', alignItems: 'center', gap: 16,
+      }}
+      whileHover={{ y: -2, boxShadow: `6px 6px 0 ${T.ink}` }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <div style={{
+        width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+        background: isActive ? T.green : T.muted,
+        border: `2px solid ${T.ink}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: DISP, fontWeight: 700, fontSize: 20, color: T.ink,
+      }}>
+        {campaign.title[0]}
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em', marginBottom: 3 }}>
+          {campaign.title}
+        </div>
+        <div style={{ fontSize: 12, opacity: 0.6, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {campaign.admin?.lcName && <span>{campaign.admin.lcName}</span>}
+          {campaign.location && <span>· {campaign.location}</span>}
+        </div>
+      </div>
+
+      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+        {isActive && campaign.endTime ? (
+          <div style={{
+            fontFamily: DISP, fontWeight: 700, fontSize: 14,
+            background: T.yellow, border: `1.5px solid ${T.ink}`,
+            borderRadius: 8, padding: '4px 10px', marginBottom: 4,
+          }}>
+            <Countdown endTime={campaign.endTime} />
+          </div>
+        ) : isActive ? (
+          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: T.green, marginBottom: 4 }}>
+            Open
+          </div>
+        ) : (
+          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, opacity: 0.4, marginBottom: 4 }}>
+            Ended
+          </div>
+        )}
+        <div style={{ fontSize: 12, opacity: 0.5 }}>
+          {campaign.entryCount != null ? `${campaign.entryCount} players` : 'View'}
+        </div>
+      </div>
+
+      <div style={{ color: T.ink, opacity: 0.4, fontSize: 20, flexShrink: 0 }}>›</div>
+    </motion.div>
+  );
+}
 
 export default function LeaderboardPage() {
   const navigate = useNavigate();
-  const { sessionId } = useQuiz();
-  const [allEntries, setAllEntries] = useState([]);
-  const [filtered, setFiltered] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [stats, setStats] = useState({ total: 0 });
-
-  const handleLeaderboardUpdate = useCallback((data) => {
-    if (Array.isArray(data)) {
-      setAllEntries(data);
-      setFiltered(search ? data.filter(e => e.name.toLowerCase().includes(search.toLowerCase())) : data);
-    }
-  }, [search]);
-
-  useSocket('leaderboard:update', handleLeaderboardUpdate);
 
   useEffect(() => {
-    api.get('/leaderboard')
-      .then(({ data }) => {
-        setAllEntries(data.leaderboard || []);
-        setFiltered(data.leaderboard || []);
-        setStats({ total: data.total || 0 });
-      })
+    api.get('/campaigns')
+      .then(({ data }) => setCampaigns(data.campaigns || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (!search.trim()) {
-      setFiltered(allEntries);
-    } else {
-      setFiltered(allEntries.filter(e =>
-        e.name.toLowerCase().includes(search.toLowerCase())
-      ));
-    }
-  }, [search, allEntries]);
-
-  const top3 = allEntries.slice(0, 3);
-  const rest = filtered.slice(3);
-
-  const podiumOrder = top3.length >= 3
-    ? [top3[1], top3[0], top3[2]]
-    : top3;
-
   return (
-    <div style={{ minHeight: '100vh', background: '#0A1628', padding: '24px 24px 100px' }}>
-      {/* Background orbs */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,200,69,0.08) 0%, transparent 70%)', top: '-100px', left: '20%' }} />
-      </div>
+    <div style={{ minHeight: '100vh', background: T.bg, color: T.ink, fontFamily: "'Inter', sans-serif", padding: '40px 24px 100px', position: 'relative', overflowX: 'hidden' }}>
+      <FloatShape top={100} right={40} delay={0} duration={5}><LGStar size={40} color={T.pink} /></FloatShape>
 
-      <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative', zIndex: 1 }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{ fontWeight: 900, fontSize: 'clamp(28px, 5vw, 42px)', marginBottom: 8 }}
-          >
-            🏆 Leaderboard
-          </motion.h1>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 15 }}>
-              {stats.total} total players
-            </span>
-            <span className="live-badge">
-              <span className="live-dot" />
-              Auto-refresh
-            </span>
-          </div>
+      <div style={{ maxWidth: 680, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <Pill bg={T.yellow} border={T.ink} style={{ marginBottom: 16 }}>Active Campaigns</Pill>
+          <h1 style={{
+            fontFamily: DISP, fontWeight: 700,
+            fontSize: 'clamp(32px, 5vw, 52px)',
+            letterSpacing: '-0.03em', marginBottom: 12,
+          }}>
+            Pick your{' '}
+            <span style={{ color: T.navy, fontStyle: 'italic' }}>campaign</span>
+          </h1>
+          <p style={{ fontSize: 15, opacity: 0.6, maxWidth: 400, margin: '0 auto' }}>
+            Each LC runs their own leaderboard. Click a campaign to see rankings and start playing.
+          </p>
         </div>
 
-        {/* Olympic Podium — top 3 */}
-        {!loading && top3.length >= 3 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            style={{
-              display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
-              gap: 8, marginBottom: 40, paddingTop: 20,
-            }}
-          >
-            {podiumOrder.map((entry, displayIdx) => {
-              const podiumRank = displayIdx === 0 ? 2 : displayIdx === 1 ? 1 : 3;
-              const heights = { 1: 120, 2: 90, 3: 70 };
-              const emojis = { 1: '🥇', 2: '🥈', 3: '🥉' };
-              const colors = {
-                1: 'linear-gradient(135deg, #FFC845, #f5a800)',
-                2: 'linear-gradient(135deg, #adb5bd, #6c757d)',
-                3: 'linear-gradient(135deg, #cd7f32, #a0522d)',
-              };
-              const isMe = entry?.sessionId === sessionId;
-
-              return (
-                <div key={entry?._id || displayIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                  {/* Name & score above podium */}
-                  <div style={{ textAlign: 'center', marginBottom: 4 }}>
-                    <div style={{ fontSize: 28 }}>{emojis[podiumRank]}</div>
-                    <div style={{
-                      fontWeight: 800, fontSize: 13,
-                      color: isMe ? '#037EF3' : 'white',
-                      maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {entry?.name || '–'}
-                      {isMe && <span style={{ color: '#037EF3' }}> (You)</span>}
-                    </div>
-                    <div style={{ color: '#FFC845', fontWeight: 900, fontSize: 16 }}>
-                      {entry?.score?.toLocaleString() || '–'}
-                    </div>
-                  </div>
-                  {/* Podium block */}
-                  <div style={{
-                    width: podiumRank === 1 ? 110 : 90,
-                    height: heights[podiumRank],
-                    background: colors[podiumRank],
-                    borderRadius: '12px 12px 0 0',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 28, fontWeight: 900, color: 'white',
-                  }}>
-                    {podiumRank}
-                  </div>
-                </div>
-              );
-            })}
-          </motion.div>
+        {loading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="skeleton" style={{ height: 90, borderRadius: 18 }} />
+            ))}
+          </div>
+        ) : campaigns.length === 0 ? (
+          <div style={{
+            textAlign: 'center', background: '#fff',
+            border: `2px solid ${T.ink}`, borderRadius: 20,
+            padding: '48px', boxShadow: `4px 4px 0 ${T.ink}`,
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🏕</div>
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, marginBottom: 8 }}>No active campaigns yet</div>
+            <div style={{ opacity: 0.5, fontSize: 14 }}>Check back soon or play the global quiz!</div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {campaigns.map((c, i) => <CampaignCard key={c._id} campaign={c} index={i} />)}
+          </div>
         )}
 
-        {/* Search */}
-        <div style={{ marginBottom: 20 }}>
-          <input
-            placeholder="🔍 Search by name..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{
-              width: '100%', background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              borderRadius: 12, padding: '12px 16px',
-              color: 'white', fontFamily: 'Nunito, sans-serif',
-              fontWeight: 700, fontSize: 15, outline: 'none',
-            }}
-          />
+        <div style={{ textAlign: 'center', marginTop: 40, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <BigButton bg={T.ink} color={T.bg} size="md" arrow onClick={() => navigate('/play')}>
+            Have a PIN? Enter it here
+          </BigButton>
+          <BigButton bg={T.muted} color={T.ink} size="md" onClick={() => navigate('/register')}>
+            Play global quiz
+          </BigButton>
         </div>
-
-        {/* Full leaderboard */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="glass-card"
-          style={{ padding: '24px' }}
-        >
-          {loading ? (
-            <div>{[...Array(8)].map((_, i) => <div key={i} className="skeleton" style={{ height: 56, borderRadius: 12, marginBottom: 8 }} />)}</div>
-          ) : filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.4)', fontWeight: 700 }}>
-              {search ? 'No players found matching your search.' : 'No scores yet! Be the first!'}
-            </div>
-          ) : (
-            <Leaderboard
-              entries={filtered}
-              currentUserSessionId={sessionId}
-              loading={false}
-            />
-          )}
-        </motion.div>
-
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          style={{ textAlign: 'center', marginTop: 32 }}
-        >
-          <button
-            onClick={() => navigate('/register')}
-            style={{
-              background: 'linear-gradient(135deg, #037EF3, #0DB14B)',
-              color: 'white', border: 'none', borderRadius: 50,
-              padding: '14px 32px', fontFamily: 'Nunito, sans-serif',
-              fontWeight: 800, fontSize: 16, cursor: 'pointer',
-            }}
-          >
-            Play & Claim Your Spot 🚀
-          </button>
-        </motion.div>
       </div>
     </div>
   );

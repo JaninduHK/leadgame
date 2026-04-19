@@ -3,26 +3,30 @@ import { useQuiz } from './context/QuizContext';
 import { useAuth } from './context/AuthContext';
 import Home from './pages/Home';
 import Register from './pages/Register';
+import PinEntry from './pages/PinEntry';
 import VideoPage from './pages/VideoPage';
 import QuizPage from './pages/QuizPage';
 import VolunteerPage from './pages/VolunteerPage';
 import ResultsPage from './pages/ResultsPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import CampaignLeaderboard from './pages/CampaignLeaderboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminAttempts from './pages/admin/AdminAttempts';
 import AdminQuestions from './pages/admin/AdminQuestions';
 import AdminVideo from './pages/admin/AdminVideo';
+import AdminCampaigns from './pages/admin/AdminCampaigns';
+import AdminCampaignEdit from './pages/admin/AdminCampaignEdit';
+import AdminCampaignEntries from './pages/admin/AdminCampaignEntries';
+import AdminAdmins from './pages/admin/AdminAdmins';
 import Navbar from './components/Navbar';
 
-// Quiz flow guard — requires a valid session
 function QuizGuard({ children }) {
   const { sessionId } = useQuiz();
   if (!sessionId) return <Navigate to="/register" replace />;
   return children;
 }
 
-// Quiz answers guard — requires answers in context
 function AnswersGuard({ children }) {
   const { sessionId, answers } = useQuiz();
   if (!sessionId) return <Navigate to="/register" replace />;
@@ -30,10 +34,16 @@ function AnswersGuard({ children }) {
   return children;
 }
 
-// Admin route guard
 function AdminGuard({ children }) {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
+  return children;
+}
+
+function SuperAdminGuard({ children }) {
+  const { isAuthenticated, isSuperAdmin } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
+  if (!isSuperAdmin) return <Navigate to="/admin/dashboard" replace />;
   return children;
 }
 
@@ -45,7 +55,10 @@ export default function App() {
         {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/play" element={<PinEntry />} />
+        <Route path="/play/:pin" element={<PinEntry />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/leaderboard/:campaignId" element={<CampaignLeaderboard />} />
 
         {/* Quiz flow (guarded) */}
         <Route path="/video" element={<QuizGuard><VideoPage /></QuizGuard>} />
@@ -60,6 +73,11 @@ export default function App() {
         <Route path="/admin/attempts" element={<AdminGuard><AdminAttempts /></AdminGuard>} />
         <Route path="/admin/questions" element={<AdminGuard><AdminQuestions /></AdminGuard>} />
         <Route path="/admin/video" element={<AdminGuard><AdminVideo /></AdminGuard>} />
+        <Route path="/admin/campaigns" element={<AdminGuard><AdminCampaigns /></AdminGuard>} />
+        <Route path="/admin/campaigns/new" element={<AdminGuard><AdminCampaignEdit /></AdminGuard>} />
+        <Route path="/admin/campaigns/:id" element={<AdminGuard><AdminCampaignEdit /></AdminGuard>} />
+        <Route path="/admin/campaigns/:id/entries" element={<AdminGuard><AdminCampaignEntries /></AdminGuard>} />
+        <Route path="/admin/admins" element={<SuperAdminGuard><AdminAdmins /></SuperAdminGuard>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -2,15 +2,15 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import Mascot from '../components/Mascot';
 import { useQuiz } from '../context/QuizContext';
 import api from '../utils/api';
+import { T, LGStar, LGSpark, FloatShape, Marquee, BigButton, Pill } from '../components/ui';
 
-const steps = ['Register', 'Watch', 'Quiz', 'Results'];
+const DISP = "'Space Grotesk', sans-serif";
 
 export default function Register() {
   const navigate = useNavigate();
-  const { setUser, setSessionId } = useQuiz();
+  const { setUser, setSessionId, campaignId, campaignTitle } = useQuiz();
   const [form, setForm] = useState({ name: '', email: '', phone: '', consent: true });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -30,10 +30,12 @@ export default function Register() {
     setErrors({});
     setLoading(true);
     try {
-      const { data } = await api.post('/quiz/register', form);
+      const payload = { ...form };
+      if (campaignId) payload.campaignId = campaignId;
+      const { data } = await api.post('/quiz/register', payload);
       setUser({ userName: form.name, userEmail: form.email, userPhone: form.phone });
       setSessionId(data.sessionId);
-      toast.success(`Welcome, ${form.name}! 🎉`);
+      toast.success(`Welcome, ${form.name}!`);
       navigate('/video');
     } catch (err) {
       const msg = err.response?.data?.error || 'Registration failed. Please try again.';
@@ -43,193 +45,144 @@ export default function Register() {
     }
   };
 
-  const inputStyle = (field) => ({
-    width: '100%', background: 'rgba(255,255,255,0.07)',
-    border: `1px solid ${errors[field] ? '#F85A40' : 'rgba(255,255,255,0.15)'}`,
-    borderRadius: 12, padding: '14px 16px',
-    color: 'white', fontFamily: 'Nunito, sans-serif',
-    fontWeight: 700, fontSize: 15, outline: 'none',
-    transition: 'border-color 0.2s',
+  const fieldStyle = (field) => ({
+    width: '100%',
+    background: 'rgba(255,255,255,0.1)',
+    border: `1.5px solid ${errors[field] ? T.pink : 'rgba(255,255,255,0.25)'}`,
+    borderRadius: 12, padding: '12px 14px',
+    color: T.bg, fontFamily: "'Inter', sans-serif",
+    fontWeight: 500, fontSize: 14, outline: 'none',
   });
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0A1628', display: 'flex', alignItems: 'center' }}>
-      {/* Background orbs */}
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(3,126,243,0.12) 0%, transparent 70%)', top: '-100px', right: '-100px' }} />
-        <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(13,177,75,0.1) 0%, transparent 70%)', bottom: '-100px', left: '-50px' }} />
+    <div style={{ background: T.bg, color: T.ink, minHeight: '100vh', overflowX: 'hidden', fontFamily: "'Inter', sans-serif" }}>
+
+      {/* ── URGENCY MARQUEE ── */}
+      <div style={{ paddingTop: 0 }}>
+        <Marquee
+          items={['Claim your slot', 'Season 03 open', 'Abroad in 2025', "Don't sleep on this"]}
+          bg={T.pink} color={T.ink} speed={22}
+        />
       </div>
 
       <div style={{
-        display: 'flex', gap: 0, maxWidth: 1000, margin: '80px auto',
-        padding: '0 24px', width: '100%', position: 'relative', zIndex: 1,
-      }}>
-        {/* Left — Journey steps */}
-        <div className="desktop-only" style={{
-          flex: '0 0 340px', padding: '40px 32px',
-          display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 32,
-        }}>
-          <div>
-            <h1 style={{ fontWeight: 900, fontSize: 32, marginBottom: 8 }}>Your Journey</h1>
-            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 15, lineHeight: 1.6 }}>
-              4 simple steps to discover your global leadership potential.
-            </p>
-          </div>
+        display: 'grid', gridTemplateColumns: '1fr 1fr',
+        gap: 48, padding: '60px 60px 60px', alignItems: 'center',
+        maxWidth: 1100, margin: '0 auto',
+      }} className="register-grid">
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {steps.map((step, i) => (
-              <div key={step} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 900, fontSize: 14,
-                  background: i === 0
-                    ? 'linear-gradient(135deg, #037EF3, #0DB14B)'
-                    : 'rgba(255,255,255,0.08)',
-                  color: i === 0 ? 'white' : 'rgba(255,255,255,0.4)',
-                  border: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                }}>
-                  {i === 0 ? '✓' : i + 1}
-                </div>
-                {i < steps.length - 1 && (
-                  <div style={{ position: 'absolute', left: 59, width: 2, height: 16, background: 'rgba(255,255,255,0.1)', marginTop: 40 }} />
-                )}
-                <div>
-                  <div style={{
-                    fontWeight: 800, fontSize: 15,
-                    color: i === 0 ? 'white' : 'rgba(255,255,255,0.4)',
-                  }}>
-                    {['Register ←', 'Watch Video', 'Take Quiz', 'Get Results'][i]}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{
-            background: 'rgba(3,126,243,0.1)', borderRadius: 16, padding: '20px',
-            border: '1px solid rgba(3,126,243,0.2)',
+        {/* ── LEFT: Headline ── */}
+        <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} style={{ position: 'relative' }}>
+          <Pill bg={T.yellow} border={T.ink} style={{ marginBottom: 20 }}>Save my seat</Pill>
+          <h1 style={{
+            fontFamily: DISP, fontWeight: 700,
+            fontSize: 'clamp(36px, 5vw, 72px)',
+            lineHeight: 0.92, letterSpacing: '-0.03em', marginBottom: 24,
           }}>
-            <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 8, color: '#037EF3' }}>💡 Did you know?</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
-              AIESEC operates in 120+ countries and has empowered over 1 million young people through international experiences.
-            </div>
-          </div>
-        </div>
+            Get your{' '}
+            <span style={{ color: T.navy, fontStyle: 'italic' }}>archetype</span>
+            <br />in the inbox.
+          </h1>
+          <p style={{ fontSize: 17, lineHeight: 1.5, maxWidth: 420, opacity: 0.8, marginBottom: 36 }}>
+            We'll send your result, a breakdown of your leadership profile, and next steps for the volunteer abroad shortlist.
+          </p>
 
-        {/* Right — Form */}
+          {/* Social proof */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 13 }}>
+            <div style={{ display: 'flex' }}>
+              {[T.pink, T.green, T.yellow, T.navy].map((c, i) => (
+                <div key={i} style={{
+                  width: 32, height: 32, borderRadius: 999, background: c,
+                  border: `2px solid ${T.ink}`, marginLeft: i === 0 ? 0 : -8,
+                }} />
+              ))}
+            </div>
+            <div><strong>2,481+ players</strong> joined this season</div>
+          </div>
+
+          <FloatShape bottom={20} left={-10} delay={0.5} duration={3.5}><LGStar size={32} color={T.pink} /></FloatShape>
+          <FloatShape top={20} right={20} delay={1} duration={4}><LGSpark size={26} color={T.green} /></FloatShape>
+        </motion.div>
+
+        {/* ── RIGHT: Form card ── */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="glass-card"
-          style={{ flex: 1, padding: '40px 36px', position: 'relative' }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          style={{
+            background: T.navy, color: T.bg,
+            border: `2px solid ${T.ink}`, borderRadius: 28,
+            padding: '36px 32px', boxShadow: `8px 8px 0 ${T.ink}`,
+            position: 'relative',
+          }}
         >
-          {/* Progress dots */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 32 }}>
-            {steps.map((s, i) => (
-              <div key={s} style={{
-                height: 8, borderRadius: 4, transition: 'all 0.3s',
-                flex: i === 0 ? 2 : 1,
-                background: i === 0 ? 'linear-gradient(90deg, #037EF3, #0DB14B)' : 'rgba(255,255,255,0.1)',
-              }} />
-            ))}
+          <div style={{ fontFamily: DISP, fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 4 }}>
+            Create your profile
           </div>
-
-          <h2 style={{ fontWeight: 900, fontSize: 26, marginBottom: 6 }}>Create Your Profile 👤</h2>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, marginBottom: 28 }}>
-            We'll send your personalised results to your email!
-          </p>
+          <div style={{ fontSize: 13, opacity: 0.7, marginBottom: campaignTitle ? 10 : 28 }}>
+            We'll email your personalised results.
+          </div>
+          {campaignTitle && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: T.green + '33', border: `1.5px solid ${T.green}`, borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, marginBottom: 18, color: T.bg }}>
+              Campaign: {campaignTitle}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {/* Name */}
-              <div>
-                <label style={{ display: 'block', fontWeight: 800, fontSize: 13, marginBottom: 6, color: 'rgba(255,255,255,0.7)' }}>
-                  Full Name *
-                </label>
-                <input
-                  style={inputStyle('name')}
-                  placeholder="e.g. Ahmad Fariz"
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                />
-                {errors.name && <div style={{ color: '#F85A40', fontSize: 12, marginTop: 4 }}>{errors.name}</div>}
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {[
+                { field: 'name', label: 'Full name', placeholder: 'Ahmad Fariz', type: 'text' },
+                { field: 'email', label: 'Email address', placeholder: 'fariz@um.edu.my', type: 'email' },
+                { field: 'phone', label: 'Phone number', placeholder: '012 345 6789', type: 'tel' },
+              ].map(({ field, label, placeholder, type }) => (
+                <div key={field}>
+                  <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6, fontWeight: 500 }}>{label} *</div>
+                  <input
+                    type={type}
+                    style={fieldStyle(field)}
+                    placeholder={placeholder}
+                    value={form[field]}
+                    onChange={e => setForm({ ...form, [field]: e.target.value })}
+                  />
+                  {errors[field] && (
+                    <div style={{ color: T.yellow, fontSize: 12, marginTop: 4 }}>{errors[field]}</div>
+                  )}
+                </div>
+              ))}
 
-              {/* Email */}
-              <div>
-                <label style={{ display: 'block', fontWeight: 800, fontSize: 13, marginBottom: 6, color: 'rgba(255,255,255,0.7)' }}>
-                  Email Address *
-                </label>
-                <input
-                  style={inputStyle('email')}
-                  type="email"
-                  placeholder="e.g. fariz@um.edu.my"
-                  value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                />
-                {errors.email && <div style={{ color: '#F85A40', fontSize: 12, marginTop: 4 }}>{errors.email}</div>}
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label style={{ display: 'block', fontWeight: 800, fontSize: 13, marginBottom: 6, color: 'rgba(255,255,255,0.7)' }}>
-                  Phone Number *
-                </label>
-                <input
-                  style={inputStyle('phone')}
-                  placeholder="e.g. 0123456789"
-                  value={form.phone}
-                  onChange={e => setForm({ ...form, phone: e.target.value })}
-                />
-                {errors.phone && <div style={{ color: '#F85A40', fontSize: 12, marginTop: 4 }}>{errors.phone}</div>}
-              </div>
-
-              {/* Consent */}
-              <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer', marginTop: 4 }}>
                 <input
                   type="checkbox"
                   checked={form.consent}
                   onChange={e => setForm({ ...form, consent: e.target.checked })}
-                  style={{ width: 18, height: 18, marginTop: 2, accentColor: '#037EF3' }}
+                  style={{ width: 16, height: 16, marginTop: 3, accentColor: T.green, flexShrink: 0 }}
                 />
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5 }}>
+                <span style={{ fontSize: 12, opacity: 0.75, lineHeight: 1.5 }}>
                   I agree to be contacted by AIESEC Malaysia about opportunities abroad and leadership programmes.
                 </span>
               </label>
 
-              {/* Submit */}
-              <motion.button
+              <BigButton
                 type="submit"
+                bg={T.yellow}
+                color={T.ink}
+                size="lg"
+                arrow
                 disabled={loading}
-                whileHover={{ scale: loading ? 1 : 1.02 }}
-                whileTap={{ scale: loading ? 1 : 0.98 }}
-                style={{
-                  width: '100%',
-                  background: loading ? 'rgba(255,255,255,0.1)' : 'linear-gradient(135deg, #037EF3, #0DB14B)',
-                  color: 'white', border: 'none', borderRadius: 14,
-                  padding: '16px', fontFamily: 'Nunito, sans-serif',
-                  fontWeight: 900, fontSize: 17, cursor: loading ? 'not-allowed' : 'pointer',
-                  marginTop: 8,
-                }}
+                style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}
               >
-                {loading ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-                    <span className="anim-spin" style={{ display: 'inline-block', width: 18, height: 18, border: '3px solid rgba(255,255,255,0.3)', borderTop: '3px solid white', borderRadius: '50%' }} />
-                    Registering...
-                  </span>
-                ) : 'Let\'s Go! 🚀'}
-              </motion.button>
+                {loading ? 'Registering…' : "Let's go"}
+              </BigButton>
             </div>
           </form>
-
-          {/* Mascot in corner */}
-          <div style={{ position: 'absolute', bottom: -10, right: -10 }} className="desktop-only">
-            <Mascot pose="reading" size={90} />
-          </div>
         </motion.div>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .register-grid { grid-template-columns: 1fr !important; padding: 32px 24px !important; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -9,6 +9,8 @@ const defaultState = {
   userName: '',
   userEmail: '',
   userPhone: '',
+  campaignId: null,
+  campaignTitle: '',
   answers: [],
   volunteerInterest: false,
   videoViews: 0,
@@ -69,10 +71,13 @@ export function QuizProvider({ children }) {
     setState((prev) => ({ ...prev, results, quizCompleted: true }));
   };
 
+  const setCampaign = (id, title = '') => {
+    setState((prev) => ({ ...prev, campaignId: id, campaignTitle: title }));
+  };
+
   const resetQuiz = () => {
     const resetState = {
       ...defaultState,
-      // Keep user info for convenience
       userName: state.userName,
       userEmail: state.userEmail,
       userPhone: state.userPhone,
@@ -87,6 +92,7 @@ export function QuizProvider({ children }) {
         ...state,
         setUser,
         setSessionId,
+        setCampaign,
         incrementVideoView,
         setVideoCompleted,
         addAnswer,
