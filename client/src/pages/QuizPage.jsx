@@ -13,7 +13,7 @@ const OPTION_COLOR = { A: T.ink, B: T.ink, C: T.ink, D: T.bg };
 
 export default function QuizPage() {
   const navigate = useNavigate();
-  const { sessionId, setAnswers, campaignId } = useQuiz();
+  const { sessionId, setAnswers, campaignId, answers } = useQuiz();
 
   const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);

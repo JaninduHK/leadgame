@@ -121,20 +121,49 @@ export default function VideoPage() {
           {/* Player */}
           <div style={{ position: 'relative', paddingTop: '56.25%', background: '#000' }}>
             {video ? (
-              <ReactPlayer
-                ref={playerRef}
-                url={video.url}
-                width="100%"
-                height="100%"
-                style={{ position: 'absolute', top: 0, left: 0 }}
-                playing={playing}
-                controls
-                onEnded={handleEnded}
-                onProgress={handleProgress}
-                onDuration={setDuration}
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
-              />
+              <>
+                <ReactPlayer
+                  ref={playerRef}
+                  url={video.url}
+                  width="100%"
+                  height="100%"
+                  style={{ position: 'absolute', top: 0, left: 0 }}
+                  playing={playing}
+                  controls={false}
+                  config={{
+                    youtube: { playerVars: { controls: 0, disablekb: 1, rel: 0, modestbranding: 1 } },
+                    file: { attributes: { controlsList: 'nodownload nofullscreen', disablePictureInPicture: true } },
+                  }}
+                  onEnded={handleEnded}
+                  onProgress={handleProgress}
+                  onDuration={setDuration}
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
+                />
+                {/* Custom play overlay — only shown when paused */}
+                {!playing && (
+                  <div
+                    onClick={() => setPlaying(true)}
+                    style={{
+                      position: 'absolute', inset: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer',
+                      background: 'rgba(0,0,0,0.35)',
+                    }}
+                  >
+                    <div style={{
+                      width: 72, height: 72, borderRadius: '50%',
+                      background: '#FFDF49', border: '3px solid #14142B',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '4px 4px 0 #14142B',
+                    }}>
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="#14142B">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div style={{
                 position: 'absolute', inset: 0,
