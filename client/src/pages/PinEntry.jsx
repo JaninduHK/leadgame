@@ -86,7 +86,7 @@ export default function PinEntry() {
               <span style={{ color: T.navy, fontStyle: 'italic' }}>PIN?</span>
             </h1>
             <p style={{ fontSize: 15, opacity: 0.65, lineHeight: 1.5 }}>
-              Your LC admin shared a 6-character PIN.<br />Enter it below to join their campaign.
+              Host shared a 6-character PIN.<br />Enter it below to join their campaign.
             </p>
           </div>
 

@@ -64,7 +64,7 @@ export default function Register() {
       {/* ── URGENCY MARQUEE ── */}
       <div style={{ paddingTop: 0 }}>
         <Marquee
-          items={['Claim your slot', 'Season 03 open', 'Abroad in 2025', "Don't sleep on this"]}
+          items={['Claim your slot', `${(() => { const m = new Date().getMonth(); return (m >= 1 && m <= 6) ? 'Summer' : 'Winter'; })()} Season open`, 'Abroad in 2025', "Don't sleep on this"]}
           bg={T.pink} color={T.ink} speed={22}
         />
       </div>

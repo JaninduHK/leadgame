@@ -144,10 +144,6 @@ export default function AdminLogin() {
             </div>
           </form>
 
-          <div style={{ marginTop: 24, padding: '14px 16px', background: T.muted, border: `1.5px solid ${T.ink}`, borderRadius: 10 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', opacity: 0.45, marginBottom: 4 }}>Default credentials</div>
-            <div style={{ fontSize: 12, opacity: 0.6, fontFamily: 'monospace' }}>admin@aiesec.org.my · Admin@123456</div>
-          </div>
         </motion.div>
       </div>
 

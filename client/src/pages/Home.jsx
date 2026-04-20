@@ -6,6 +6,11 @@ import { T, LGStar, LGDiamond, LGCross, LGSpark, FloatShape, Marquee, BigButton,
 
 const DISP = "'Space Grotesk', sans-serif";
 
+function getSeason() {
+  const m = new Date().getMonth();
+  return (m >= 1 && m <= 6) ? 'Summer' : 'Winter';
+}
+
 export default function Home() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ totalPlayers: 0 });
@@ -39,7 +44,7 @@ export default function Home() {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <Pill bg={T.green} border={T.ink} style={{ marginBottom: 28 }}>
               <span style={{ width: 6, height: 6, background: T.ink, borderRadius: 999 }} />
-              Season 03 · now open
+              {getSeason()} Season · now open
             </Pill>
 
             <h1 style={{
@@ -83,7 +88,7 @@ export default function Home() {
       {/* ── UNIVERSITY MARQUEE ── */}
       <div style={{ marginTop: 60 }}>
         <Marquee
-          items={['University of Malaya', 'Sunway University', "Taylor's", 'Monash', 'INTI', 'UTAR', 'HELP University', 'MMU']}
+          items={['🇮🇳 India', '🇷🇴 Romania', '🇧🇷 Brazil', '🇨🇿 Czech Republic', '🇪🇬 Egypt', 'Project Aquatica', 'Project Heartbeat', 'Project Global Classroom', '🇨🇴 Colombia', '🇹🇷 Turkey']}
           bg={T.navy} color={T.bg} speed={28}
         />
       </div>

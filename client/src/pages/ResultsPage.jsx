@@ -276,7 +276,7 @@ export default function ResultsPage() {
           <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
               <div>
-                <Pill bg={T.yellow} border={T.ink} style={{ marginBottom: 10 }}>🏆 Season leaderboard</Pill>
+                <Pill bg={T.yellow} border={T.ink} style={{ marginBottom: 10 }}>🏆 {(() => { const m = new Date().getMonth(); return (m >= 1 && m <= 6) ? 'Summer' : 'Winter'; })()} Season leaderboard</Pill>
                 <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 28, letterSpacing: '-0.03em' }}>Top 5 this week</div>
               </div>
               <button
