@@ -13,7 +13,7 @@ const OPTION_COLOR = { A: T.ink, B: T.ink, C: T.ink, D: T.bg };
 
 export default function QuizPage() {
   const navigate = useNavigate();
-  const { sessionId, setAnswers, campaignId, answers } = useQuiz();
+  const { sessionId, setAnswers, campaignId } = useQuiz();
 
   const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);
@@ -38,7 +38,6 @@ export default function QuizPage() {
 
   useEffect(() => {
     if (!campaignId) { navigate('/play', { replace: true }); return; }
-    if (answers?.length > 0) { navigate('/results', { replace: true }); return; }
     api.get(`/quiz/questions?campaignId=${campaignId}`)
       .then(({ data }) => {
         setQuestions(data);
