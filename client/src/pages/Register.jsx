@@ -15,11 +15,17 @@ export default function Register() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
+  const formatPhone = (raw) => {
+    const digits = raw.replace(/\D/g, '');
+    const stripped = digits.startsWith('0') ? digits.slice(1) : digits;
+    return stripped ? `+60${stripped}` : '';
+  };
+
   const validate = () => {
     const errs = {};
     if (!form.name.trim()) errs.name = 'Name is required';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Valid email required';
-    if (!form.phone.trim() || form.phone.length < 8) errs.phone = 'Valid phone required';
+    if (!form.phone.trim() || form.phone.replace(/\D/g, '').length < 7) errs.phone = 'Valid phone required';
     return errs;
   };
 
@@ -30,7 +36,7 @@ export default function Register() {
     setErrors({});
     setLoading(true);
     try {
-      const payload = { ...form };
+      const payload = { ...form, phone: formatPhone(form.phone) };
       if (campaignId) payload.campaignId = campaignId;
       const { data } = await api.post('/quiz/register', payload);
       setUser({ userName: form.name, userEmail: form.email, userPhone: form.phone });
@@ -137,7 +143,6 @@ export default function Register() {
               {[
                 { field: 'name', label: 'Full name', placeholder: 'Ahmad Fariz', type: 'text' },
                 { field: 'email', label: 'Email address', placeholder: 'fariz@um.edu.my', type: 'email' },
-                { field: 'phone', label: 'Phone number', placeholder: '012 345 6789', type: 'tel' },
               ].map(({ field, label, placeholder, type }) => (
                 <div key={field}>
                   <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6, fontWeight: 500 }}>{label} *</div>
@@ -153,6 +158,27 @@ export default function Register() {
                   )}
                 </div>
               ))}
+
+              {/* Phone with +60 prefix */}
+              <div>
+                <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 6, fontWeight: 500 }}>Phone number *</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                  <span style={{
+                    background: 'rgba(255,255,255,0.15)', border: `1.5px solid ${errors.phone ? T.pink : 'rgba(255,255,255,0.25)'}`,
+                    borderRight: 'none', borderRadius: '12px 0 0 12px',
+                    padding: '12px 12px', color: T.bg, fontFamily: "'Inter', sans-serif",
+                    fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', flexShrink: 0,
+                  }}>+60</span>
+                  <input
+                    type="tel"
+                    style={{ ...fieldStyle('phone'), borderRadius: '0 12px 12px 0', flex: 1 }}
+                    placeholder="123456789"
+                    value={form.phone}
+                    onChange={e => setForm({ ...form, phone: e.target.value.replace(/\D/g, '').replace(/^0/, '') })}
+                  />
+                </div>
+                {errors.phone && <div style={{ color: T.yellow, fontSize: 12, marginTop: 4 }}>{errors.phone}</div>}
+              </div>
 
               <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer', marginTop: 4 }}>
                 <input

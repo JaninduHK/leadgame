@@ -20,14 +20,21 @@ function ActionButtons({ entry, campaign }) {
   const accuracy = entry.totalQuestions > 0 ? Math.round((entry.correctAnswers / entry.totalQuestions) * 100) : 0;
   const vars = { name: entry.name, score: entry.score, rank: entry.rank, accuracy, campaign: campaign?.title || '' };
 
+  const normalizePhone = (raw) => {
+    const digits = (raw || '').replace(/\D/g, '');
+    if (digits.startsWith('60')) return digits;
+    if (digits.startsWith('0')) return '60' + digits.slice(1);
+    return '60' + digits;
+  };
+
   const sendWA = () => {
-    const phone = (entry.phone || '').replace(/\D/g, '');
+    const phone = normalizePhone(entry.phone);
     const msg = renderTemplate(campaign?.whatsappTemplate, vars) || `Hi ${entry.name}! Your score: ${entry.score} pts, rank #${entry.rank}.`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const sendTG = () => {
-    const phone = (entry.phone || '').replace(/\D/g, '');
+    const phone = normalizePhone(entry.phone);
     window.open(`https://t.me/+${phone}`, '_blank');
   };
 

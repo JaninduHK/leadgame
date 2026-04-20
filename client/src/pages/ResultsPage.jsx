@@ -118,13 +118,38 @@ export default function ResultsPage() {
     }
   };
 
-  const handleShare = async () => {
-    const text = `I scored ${results.score} pts and ranked #${results.rank} on the LEAD GAME by AIESEC Malaysia! 🏆 Can you beat me? ${window.location.origin}`;
-    try {
-      if (navigator.share) await navigator.share({ title: 'LEAD GAME', text });
-      else { await navigator.clipboard.writeText(text); toast.success('Copied to clipboard!'); }
-    } catch {}
-  };
+  const [showShare, setShowShare] = useState(false);
+
+  const shareText = `I scored ${results?.score} pts and ranked #${results?.rank} on the LEAD GAME by AIESEC Malaysia! 🏆 Can you beat me?`;
+  const shareUrl = window.location.origin;
+
+  const shareOptions = [
+    {
+      label: 'WhatsApp',
+      bg: '#25D366', color: '#fff',
+      href: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+    },
+    {
+      label: 'Facebook',
+      bg: '#1877F2', color: '#fff',
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`,
+    },
+    {
+      label: 'Twitter / X',
+      bg: '#000', color: '#fff',
+      href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+    },
+    {
+      label: 'Telegram',
+      bg: '#229ED9', color: '#fff',
+      href: `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`,
+    },
+    {
+      label: 'Copy link',
+      bg: '#fff', color: T.ink,
+      onClick: async () => { await navigator.clipboard.writeText(`${shareText} ${shareUrl}`); toast.success('Copied!'); setShowShare(false); },
+    },
+  ];
 
   if (!submitted || !results) {
     return (
@@ -247,9 +272,37 @@ export default function ResultsPage() {
               <BigButton bg={T.pink} color={T.ink} size="md" arrow onClick={() => window.open('https://aiesec.org/malaysia', '_blank')}>
                 Claim your slot
               </BigButton>
-              <BigButton bg="transparent" color={T.ink} size="md" onClick={handleShare}>
-                Share result
-              </BigButton>
+              <div style={{ position: 'relative' }}>
+                <BigButton bg="transparent" color={T.ink} size="md" onClick={() => setShowShare(v => !v)}>
+                  Share result
+                </BigButton>
+                {showShare && (
+                  <div style={{
+                    position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 100,
+                    background: '#fff', border: `2px solid ${T.ink}`, borderRadius: 14,
+                    boxShadow: `4px 4px 0 ${T.ink}`, padding: 8, minWidth: 180,
+                    display: 'flex', flexDirection: 'column', gap: 4,
+                  }}>
+                    {shareOptions.map(({ label, bg, color, href, onClick }) => (
+                      <a
+                        key={label}
+                        href={href || undefined}
+                        target={href ? '_blank' : undefined}
+                        rel="noreferrer"
+                        onClick={onClick || (() => setShowShare(false))}
+                        style={{
+                          display: 'block', padding: '9px 14px', borderRadius: 9,
+                          background: bg, color, fontWeight: 700, fontSize: 13,
+                          border: `1.5px solid ${T.ink}`, textDecoration: 'none',
+                          cursor: 'pointer', fontFamily: "'Inter', sans-serif",
+                        }}
+                      >
+                        {label}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
             </motion.div>
             <button
               onClick={() => { resetQuiz(); navigate('/'); }}
@@ -313,8 +366,8 @@ export default function ResultsPage() {
                 marginTop: 20, padding: '16px 18px',
                 border: `2px dashed ${T.ink}`, borderRadius: 16, fontSize: 13, lineHeight: 1.5,
               }}>
-                <strong>Top 20 players</strong> this season get interviewed for a{' '}
-                <strong>fully-funded</strong> volunteer placement abroad.
+                <strong>Top players</strong> this season receive{' '}
+                <strong>discounted volunteer opportunities</strong> abroad with AIESEC.
                 {results.rank <= 20 ? " You're currently in. 🎉" : ` You're #${results.rank} — keep playing!`}
               </div>
             )}

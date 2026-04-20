@@ -57,7 +57,7 @@ export default function Home() {
             </h1>
 
             <p style={{ fontSize: 18, lineHeight: 1.5, maxWidth: 520, marginBottom: 36, opacity: 0.8 }}>
-              Play a 4-minute quiz, discover your leadership archetype, and top scorers win a fully-funded volunteer placement abroad with AIESEC.
+              Play a 4-minute quiz, discover your leadership archetype, and top scorers receive discounted volunteer opportunities abroad with AIESEC.
             </p>
 
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 52 }}>
@@ -88,7 +88,7 @@ export default function Home() {
       {/* ── UNIVERSITY MARQUEE ── */}
       <div style={{ marginTop: 60 }}>
         <Marquee
-          items={['🇮🇳 India', '🇷🇴 Romania', '🇧🇷 Brazil', '🇨🇿 Czech Republic', '🇪🇬 Egypt', 'Project Aquatica', 'Project Heartbeat', 'Project Global Classroom', '🇨🇴 Colombia', '🇹🇷 Turkey']}
+          items={['🇮🇳 India', 'Project Aquatica', '🇧🇷 Brazil', 'Project Heartbeat', '🇪🇬 Egypt', 'Project Skillup', '🇷🇴 Romania', 'Project Global Classroom', '🇨🇴 Colombia','Project Happy Bus', '🇹🇷 Turkey']}
           bg={T.navy} color={T.bg} speed={28}
         />
       </div>

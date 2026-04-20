@@ -3,18 +3,26 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import api from '../../utils/api';
 import { T, BigButton } from '../../components/ui';
+import { useAuth } from '../../context/AuthContext';
 
 const DISP = "'Space Grotesk', sans-serif";
 
-function ActionButtons({ entry }) {
+function ActionButtons({ entry, onDelete, isSuperAdmin }) {
+  const normalizePhone = (raw) => {
+    const digits = (raw || '').replace(/\D/g, '');
+    if (digits.startsWith('60')) return digits;
+    if (digits.startsWith('0')) return '60' + digits.slice(1);
+    return '60' + digits;
+  };
+
   const sendWA = () => {
-    const phone = (entry.phone || '').replace(/\D/g, '');
+    const phone = normalizePhone(entry.phone);
     const msg = `Hi ${entry.name}! You scored ${entry.score} pts on the AIESEC quiz. Interested in volunteering abroad? Let's connect!`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const sendTG = () => {
-    const phone = (entry.phone || '').replace(/\D/g, '');
+    const phone = normalizePhone(entry.phone);
     window.open(`https://t.me/+${phone}`, '_blank');
   };
 
@@ -29,6 +37,9 @@ function ActionButtons({ entry }) {
       <button onClick={sendWA} title="WhatsApp" style={{ background: '#25D366', border: `1.5px solid ${T.ink}`, borderRadius: 6, padding: '4px 8px', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>WA</button>
       <button onClick={sendTG} title="Telegram" style={{ background: '#229ED9', color: '#fff', border: `1.5px solid ${T.ink}`, borderRadius: 6, padding: '4px 8px', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>TG</button>
       <button onClick={sendEmail} title="Email" style={{ background: T.yellow, border: `1.5px solid ${T.ink}`, borderRadius: 6, padding: '4px 8px', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>✉</button>
+      {isSuperAdmin && (
+        <button onClick={onDelete} title="Delete" style={{ background: '#fee2e2', color: '#dc2626', border: '1.5px solid #dc2626', borderRadius: 6, padding: '4px 8px', fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>✕</button>
+      )}
     </div>
   );
 }
@@ -40,6 +51,7 @@ const inputStyle = {
 };
 
 export default function AdminAttempts() {
+  const { isSuperAdmin } = useAuth();
   const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -82,6 +94,18 @@ export default function AdminAttempts() {
     setFilters(f);
     setPage(1);
     loadAttempts(1, f);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this attempt? This cannot be undone.')) return;
+    try {
+      await api.delete(`/admin/attempts/${id}`);
+      setAttempts(prev => prev.filter(a => a._id !== id));
+      setTotal(prev => prev - 1);
+      toast.success('Attempt deleted');
+    } catch {
+      toast.error('Failed to delete');
+    }
   };
 
   const handleExport = async () => {
@@ -184,7 +208,7 @@ export default function AdminAttempts() {
                         {new Date(a.createdAt).toLocaleDateString()}
                       </td>
                       <td style={{ padding: '10px 13px' }}>
-                        <ActionButtons entry={a} />
+                        <ActionButtons entry={a} onDelete={() => handleDelete(a._id)} isSuperAdmin={isSuperAdmin} />
                       </td>
                     </motion.tr>
                   ))}

@@ -68,7 +68,7 @@ export default function VolunteerPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 14, justifyContent: 'center', marginBottom: 28, flexWrap: 'wrap' }}>
-            {[{ v: '120+', l: 'Countries' }, { v: '6–8', l: 'Weeks' }, { v: '100K+', l: 'Youth/year' }].map(({ v, l }) => (
+            {[{ v: '120+', l: 'Countries' }, { v: '4–6', l: 'Weeks' }, { v: '10+', l: 'Projects' }].map(({ v, l }) => (
               <div key={l} style={{ border: '1.5px solid rgba(255,255,255,0.2)', borderRadius: 12, padding: '10px 18px', textAlign: 'center', minWidth: 80 }}>
                 <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, letterSpacing: '-0.02em' }}>{v}</div>
                 <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>{l}</div>
