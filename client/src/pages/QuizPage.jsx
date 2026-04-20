@@ -8,7 +8,8 @@ import api from '../utils/api';
 import { T, LGStar, LGSpark, FloatShape, BigButton, Pill } from '../components/ui';
 
 const DISP = "'Space Grotesk', sans-serif";
-const OPTION_BG = { A: T.pink, B: T.bg, C: T.green, D: T.bg };
+const OPTION_BG = { A: T.pink, B: T.yellow, C: T.green, D: T.navy };
+const OPTION_COLOR = { A: T.ink, B: T.ink, C: T.ink, D: T.bg };
 
 export default function QuizPage() {
   const navigate = useNavigate();
@@ -36,13 +37,14 @@ export default function QuizPage() {
   );
 
   useEffect(() => {
-    if (!campaignId) { navigate('/play'); return; }
+    if (!campaignId) { navigate('/play', { replace: true }); return; }
+    if (answers?.length > 0) { navigate('/results', { replace: true }); return; }
     api.get(`/quiz/questions?campaignId=${campaignId}`)
       .then(({ data }) => {
         setQuestions(data);
         questionStartTimeRef.current = Date.now();
       })
-      .catch(() => { toast.error('Failed to load questions'); navigate('/play'); })
+      .catch(() => { toast.error('Failed to load questions'); navigate('/play', { replace: true }); })
       .finally(() => setLoading(false));
   }, [campaignId]);
 
@@ -83,7 +85,7 @@ export default function QuizPage() {
         setCurrent(prev => prev + 1);
       } else {
         setAnswers(updatedAnswers);
-        navigate('/volunteer');
+        navigate('/volunteer', { replace: true });
       }
     }, isCorrect ? 1200 : 1500);
   }, [answered, currentQuestion, allAnswers, current, questions.length]);
@@ -204,17 +206,18 @@ export default function QuizPage() {
                   const isWrong = answered && isSelected && !isCorrect;
 
                   let bg = OPTION_BG[val] || T.bg;
+                  let textColor = answered ? T.ink : (OPTION_COLOR[val] || T.ink);
                   let shadow = `3px 3px 0 ${T.ink}`;
                   let transform = 'none';
                   let animation;
 
                   if (isCorrect && answered) {
-                    bg = T.green;
+                    bg = T.green; textColor = T.ink;
                     shadow = `5px 5px 0 ${T.ink}`;
                     transform = 'translate(-2px,-2px)';
                     animation = 'correct-flash 0.4s ease';
                   } else if (isWrong) {
-                    bg = T.pink;
+                    bg = T.pink; textColor = T.ink;
                     animation = 'wrong-flash 0.4s ease';
                   } else if (isSelected) {
                     shadow = `5px 5px 0 ${T.ink}`;
@@ -241,15 +244,15 @@ export default function QuizPage() {
                     >
                       <div style={{
                         width: 40, height: 40, borderRadius: 999, flexShrink: 0,
-                        background: (isCorrect && answered) ? T.ink : isWrong ? T.ink : T.bg,
-                        color: (isCorrect && answered) || isWrong ? T.bg : T.ink,
+                        background: (isCorrect && answered) ? T.ink : isWrong ? T.ink : 'rgba(0,0,0,0.15)',
+                        color: (isCorrect && answered) || isWrong ? T.bg : textColor,
                         border: `2px solid ${T.ink}`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontFamily: DISP, fontWeight: 700, fontSize: 16,
                       }}>
                         {isCorrect && answered ? '✓' : isWrong ? '✗' : val}
                       </div>
-                      <span style={{ fontWeight: 500, fontSize: 15, lineHeight: 1.4, flex: 1 }}>
+                      <span style={{ fontWeight: 500, fontSize: 15, lineHeight: 1.4, flex: 1, color: textColor }}>
                         {option.label}
                       </span>
                     </motion.button>

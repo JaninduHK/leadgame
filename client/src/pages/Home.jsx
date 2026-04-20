@@ -88,7 +88,7 @@ export default function Home() {
       {/* ── UNIVERSITY MARQUEE ── */}
       <div style={{ marginTop: 60 }}>
         <Marquee
-          items={['🇮🇳 India', 'Project Aquatica', '🇧🇷 Brazil', 'Project Heartbeat', '🇪🇬 Egypt', 'Project Skillup', '🇷🇴 Romania', 'Project Global Classroom', '🇨🇴 Colombia','Project Happy Bus', '🇹🇷 Turkey']}
+          items={['🇮🇳 India', 'Project Aquatica', '🇧🇷 Brazil', 'Project Heartbeat', '🇪🇬 Egypt', 'Project Skillup', '🇷🇴 Romania', 'Project Global Classroom', '🇨🇴 Colombia','Project Happy Bus', '🇹🇷 Turkey', 'Project Youth 4 Impact']}
           bg={T.navy} color={T.bg} speed={28}
         />
       </div>

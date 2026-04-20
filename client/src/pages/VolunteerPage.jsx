@@ -12,13 +12,13 @@ export default function VolunteerPage() {
 
   const handleYes = () => {
     setVolunteerInterest(true);
-    window.open('https://aiesec.org/malaysia/opportunities', '_blank');
-    navigate('/results');
+    window.open('https://aiesec.my/global-volunteer', '_blank');
+    navigate('/results', { replace: true });
   };
 
   const handleMaybeLater = () => {
     setVolunteerInterest(false);
-    navigate('/results');
+    navigate('/results', { replace: true });
   };
 
   return (

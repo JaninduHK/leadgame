@@ -33,12 +33,11 @@ router.post('/register', [
   const { name, email, phone, campaignId } = req.body;
   try {
     // Rate limiting: max 3 per email per day per campaign
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const filter = { email, createdAt: { $gte: oneDayAgo } };
+    const filter = { email };
     if (campaignId) filter.campaign = campaignId;
     const recentAttempts = await Attempt.countDocuments(filter);
-    if (recentAttempts >= 3) {
-      return res.status(429).json({ error: 'Maximum 3 attempts per day reached. Try again tomorrow.' });
+    if (recentAttempts >= 1) {
+      return res.status(429).json({ error: 'You have already participated in this campaign.' });
     }
 
     // Validate campaign if provided
